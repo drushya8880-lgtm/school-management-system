@@ -9,11 +9,23 @@ from mysql.connector import errorcode
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Configuration loading
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_PORT = os.environ.get('DB_PORT', '3306')
-DB_USER = os.environ.get('DB_USER', 'root')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
-DB_NAME = os.environ.get('DB_NAME', 'gurukul_dashboard')
+import urllib.parse as urlparse
+
+db_url = os.environ.get('DATABASE_URL') or os.environ.get('JAWSDB_URL') or os.environ.get('CLEARDB_DATABASE_URL')
+
+if db_url:
+    url = urlparse.urlparse(db_url)
+    DB_HOST = url.hostname
+    DB_PORT = url.port or 3306
+    DB_USER = url.username
+    DB_PASSWORD = url.password
+    DB_NAME = url.path.lstrip('/')
+else:
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_PORT = os.environ.get('DB_PORT', '3306')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+    DB_NAME = os.environ.get('DB_NAME', 'gurukul_dashboard')
 
 # Holiday List (for seeder)
 holidays = [
@@ -33,20 +45,32 @@ def get_db_connection(include_db=True):
     return mysql.connector.connect(**config)
 
 def setup_database():
-    # Step 1: Connect without database to create the database if not exists
-    try:
-        conn = get_db_connection(include_db=False)
-        cursor = conn.cursor()
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
-        cursor.close()
-        conn.close()
-    except mysql.connector.Error as err:
-        print(f"Failed creating database: {err}")
-        return False
-
-    # Step 2: Connect with database to create tables and seed data
+    # Attempt to connect to the database directly first
+    conn = None
     try:
         conn = get_db_connection(include_db=True)
+    except mysql.connector.Error as err:
+        # If database doesn't exist, try to create it
+        if err.errno == errorcode.ER_BAD_DB_ERROR:
+            try:
+                print(f"Database {DB_NAME} does not exist. Attempting to create it...")
+                conn_no_db = get_db_connection(include_db=False)
+                cursor = conn_no_db.cursor()
+                cursor.execute(f"CREATE DATABASE {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+                cursor.close()
+                conn_no_db.close()
+                
+                # Connect to the newly created database
+                conn = get_db_connection(include_db=True)
+            except mysql.connector.Error as create_err:
+                print(f"Failed to create database {DB_NAME}: {create_err}")
+                return False
+        else:
+            print(f"Failed to connect to MySQL: {err}")
+            return False
+
+    # Create tables and seed data
+    try:
         cursor = conn.cursor()
 
         # Create admin_users table
@@ -103,11 +127,12 @@ def setup_database():
             )
         """)
 
-        # Check and seed admin_users
-        cursor.execute("SELECT COUNT(*) FROM admin_users")
+        # Check and seed admin_users specifically for 'admin' username
+        cursor.execute("SELECT COUNT(*) FROM admin_users WHERE username = %s", ('admin',))
         if cursor.fetchone()[0] == 0:
             cursor.execute("INSERT INTO admin_users (username, password) VALUES (%s, %s)", ('admin', 'admin123'))
             conn.commit()
+            print("Default admin user created successfully!")
 
         # Check and seed students & default attendance/payments
         cursor.execute("SELECT COUNT(*) FROM students")
