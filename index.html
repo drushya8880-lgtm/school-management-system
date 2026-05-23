@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Gurukul Digital - A modern, authentic Indian Student Management System showcasing cultural integration and academic trackers.">
+  <title>Gurukul Digital | Indian Student Management System</title>
+
+  <!-- Google Fonts for English, Hindi, and Regional Scripts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- Background Traditional Jaali Grid Ornamentation -->
+  <div class="jaali-bg-pattern"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loader-overlay" class="loader-overlay hidden">
+    <div class="loader-container">
+      <svg class="chakra-loader" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" stroke="#FF9933" stroke-width="2" fill="none" stroke-dasharray="10 5" />
+        <circle cx="50" cy="50" r="30" stroke="#003366" stroke-width="4" fill="none" />
+        <!-- Ashoka Chakra Spokes Simulation -->
+        <g stroke="#003366" stroke-width="2">
+          <line x1="50" y1="20" x2="50" y2="80" />
+          <line x1="20" y1="50" x2="80" y2="50" />
+          <line x1="29" y1="29" x2="71" y2="71" />
+          <line x1="71" y1="29" x2="29" y2="71" />
+          <line x1="50" y1="50" x2="60" y2="21" />
+          <line x1="50" y1="50" x2="40" y2="79" />
+          <line x1="50" y1="50" x2="79" y2="40" />
+          <line x1="50" y1="50" x2="21" y2="60" />
+          <line x1="50" y1="50" x2="39" y2="21" />
+          <line x1="50" y1="50" x2="61" y2="79" />
+          <line x1="50" y1="50" x2="79" y2="60" />
+          <line x1="50" y1="50" x2="21" y2="40" />
+        </g>
+        <circle cx="50" cy="50" r="5" fill="#003366" />
+      </svg>
+      <p id="loader-text" class="loader-text">please wait...</p>
+    </div>
+  </div>
+
+  <!-- Offline Status Bar -->
+  <div id="offline-bar" class="offline-bar hidden" role="alert" aria-live="assertive">
+    <span class="alert-icon">⚠️</span>
+    <span id="offline-bar-text">You are currently viewing in Offline Mode. Some functions may be limited.</span>
+  </div>
+
+  <!-- Login Screen Container -->
+  <div id="login-container" class="login-container hidden">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo-wrapper">
+          <!-- Lotus brand-logo SVG -->
+          <svg viewBox="0 0 100 100" class="login-brand-icon">
+            <path d="M50 15 C35 35 15 45 15 65 C15 80 30 85 50 85 C70 85 85 80 85 65 C85 45 65 35 50 15 Z" fill="none"
+              stroke="#FF9933" stroke-width="4" />
+            <!-- Lotus Petals -->
+            <path d="M50 35 C42 48 28 55 28 68 C28 75 36 78 50 78 C64 78 72 75 72 68 C72 55 58 48 50 35 Z"
+              fill="#138808" opacity="0.15" />
+            <path d="M50 40 C44 50 35 55 35 68 C35 73 40 75 50 75 C60 75 65 73 65 68 C65 50 56 50 50 40 Z"
+              fill="#FF9933" opacity="0.3" />
+            <circle cx="50" cy="65" r="8" fill="#003366" />
+          </svg>
+        </div>
+        <h2 class="login-title">GURUKUL</h2>
+        <span class="login-subtitle">DIGITAL CAMPUS</span>
+        <p class="login-welcome-text">Sign in to access school administration panel</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group-login">
+          <label for="login-username">Username or Email</label>
+          <div class="input-wrapper-login">
+            <span class="input-icon-login">👤</span>
+            <input type="text" id="login-username" required placeholder="Enter admin username">
+          </div>
+        </div>
+        <div class="form-group-login">
+          <label for="login-password">Password</label>
+          <div class="input-wrapper-login">
+            <span class="input-icon-login">🔒</span>
+            <input type="password" id="login-password" required placeholder="Enter admin password">
+          </div>
+        </div>
+        <div id="login-error-msg" class="login-error hidden" role="alert">
+          ⚠️ Invalid username or password. Please try again.
+        </div>
+        <button type="submit" class="btn-login-submit">Login 🚪</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-layout hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" aria-label="Main Navigation">
+      <!-- Corner Kolam Decoration -->
+      <div class="kolam-decor top-right"
+        style="opacity: 0.15; filter: invert(1); width: 40px; height: 40px; top: 5px; right: 5px;"></div>
+
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <!-- Lotus motif mixed with academic shield -->
+          <svg viewBox="0 0 100 100" class="brand-icon">
+            <path d="M50 15 C35 35 15 45 15 65 C15 80 30 85 50 85 C70 85 85 80 85 65 C85 45 65 35 50 15 Z" fill="none"
+              stroke="#FF9933" stroke-width="4" />
+            <!-- Lotus Petals -->
+            <path d="M50 35 C42 48 28 55 28 68 C28 75 36 78 50 78 C64 78 72 75 72 68 C72 55 58 48 50 35 Z"
+              fill="#138808" opacity="0.15" />
+            <path d="M50 40 C44 50 35 55 35 68 C35 73 40 75 50 75 C60 75 65 73 65 68 C65 50 56 50 50 40 Z"
+              fill="#FF9933" opacity="0.3" />
+            <circle cx="50" cy="65" r="8" fill="#003366" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">GURUKUL</h1>
+          <span class="brand-subtitle">DIGITAL CAMPUS</span>
+        </div>
+      </div>
+
+      <div class="sidebar-divider kolam-divider" style="opacity: 0.3; filter: invert(1); margin: 5px 20px;"></div>
+
+      <nav class="nav-menu">
+        <a href="#dashboard" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#students" class="nav-item" data-view="students" id="nav-students">
+          <span class="nav-icon">👨‍🎓</span>
+          <span class="nav-label">Students</span>
+        </a>
+        <a href="#attendance" class="nav-item" data-view="attendance" id="nav-attendance">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Attendance</span>
+        </a>
+        <a href="#grades" class="nav-item" data-view="grades" id="nav-grades">
+          <span class="nav-icon">🏆</span>
+          <span class="nav-label">Grades & Reports</span>
+        </a>
+        <a href="#timetable" class="nav-item" data-view="timetable" id="nav-timetable">
+          <span class="nav-icon">🕒</span>
+          <span class="nav-label">Timetable</span>
+        </a>
+        <a href="#fees" class="nav-item" data-view="fees" id="nav-fees">
+          <span class="nav-icon">₹</span>
+          <span class="nav-label">Fees Management</span>
+        </a>
+        <a href="#diagnostics" class="nav-item diagnostics-nav" data-view="diagnostics" id="nav-diagnostics">
+          <span class="nav-icon">🧪</span>
+          <span class="nav-label">Run E2E Diagnostics</span>
+        </a>
+        <a href="#logout" class="nav-item" data-view="logout" id="nav-logout"
+          style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 10px;">
+          <span class="nav-icon">🚪</span>
+          <span class="nav-label">Logout</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer / Traditional Shloka Card -->
+      <div class="shloka-card">
+        <p class="shloka-translation">"Knowledge is that which liberates"</p>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Container -->
+    <div class="main-container">
+
+      <!-- Top Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Navigation Menu">
+            ☰
+          </button>
+          <div class="header-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="global-search" placeholder="Search Roll No, Name..."
+              aria-label="Search students or records">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Network simulator toggle -->
+          <div class="network-simulator">
+            <label class="toggle-switch">
+              <input type="checkbox" id="network-toggle" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="network-status-label" id="network-status-text">Online (5G)</span>
+          </div>
+
+
+
+          <!-- Accessibility Controls Panel -->
+          <div class="a11y-panel-container">
+            <button class="header-btn" id="a11y-btn" title="Accessibility Settings" aria-haspopup="true"
+              aria-expanded="false">
+              ♿ Accessibility
+            </button>
+            <div class="dropdown-menu a11y-menu" id="a11y-dropdown">
+              <div class="a11y-option">
+                <span>Text Size</span>
+                <div class="btn-group">
+                  <button id="font-dec" class="a11y-control-btn" title="Decrease Font">-</button>
+                  <button id="font-normal" class="a11y-control-btn active" title="Reset Font">Normal</button>
+                  <button id="font-inc" class="a11y-control-btn" title="Increase Font">+</button>
+                </div>
+              </div>
+              <div class="a11y-option">
+                <span>High Contrast</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="contrast-toggle">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="a11y-option">
+                <span>Screen Reader Mode</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="screenreader-toggle">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications Alert Bell -->
+          <div class="notification-container">
+            <button class="header-btn notification-bell" id="notification-btn"
+              aria-label="Notifications, 3 unread items">
+              🔔
+              <span class="badge" id="notif-count">3</span>
+            </button>
+            <div class="dropdown-menu notifications-menu" id="notifications-dropdown">
+              <div class="notif-header">
+                <h3>Recent Alerts</h3>
+                <button id="mark-all-read" class="text-btn">Mark all as read</button>
+              </div>
+              <ul class="notif-list" id="notif-list">
+                <!-- Loaded dynamically -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- User Profile Details -->
+          <div class="profile-card">
+            <div class="profile-avatar">
+              <span class="avatar-initials">AB</span>
+            </div>
+            <div class="profile-info">
+              <div class="profile-name">DR Adarsh Babu</div>
+              <div class="profile-role">Principal / Administrator</div>
+            </div>
+            <button id="header-logout-btn" class="logout-btn-header" title="Logout">🚪</button>
+          </div>
+
+        </div>
+      </header>
+
+      <!-- Main Dynamic Content Wrapper -->
+      <main id="main-content" class="content-area" aria-live="polite">
+        <!-- Rendered view goes here -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Dialog Modals -->
+
+  <!-- Student Add/Edit Dialog -->
+  <div id="student-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Add New Student</h2>
+        <button class="close-modal-btn" id="close-student-modal">&times;</button>
+      </div>
+      <form id="student-form" class="modal-form">
+        <input type="hidden" id="student-id">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="student-first-name" class="required">First Name</label>
+            <input type="text" id="student-first-name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="student-middle-name">Middle Name</label>
+            <input type="text" id="student-middle-name">
+          </div>
+
+          <div class="form-group">
+            <label for="student-last-name" class="required">Last Name</label>
+            <input type="text" id="student-last-name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="student-class" class="required">Class</label>
+            <select id="student-class" required>
+              <option value="">Select Class</option>
+              <option value="10">Class 10</option>
+              <option value="11">Class 11</option>
+              <option value="12">Class 12</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="student-section" class="required">Section</label>
+            <select id="student-section" required>
+              <option value="">Select Section</option>
+              <option value="A">Section A</option>
+              <option value="B">Section B</option>
+              <option value="C">Section C</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="student-roll" class="required">Roll Number</label>
+            <input type="number" id="student-roll" required>
+          </div>
+
+          <div class="form-group">
+            <label for="student-aadhaar">Aadhaar Number (Optional)</label>
+            <input type="text" id="student-aadhaar" pattern="^\d{4}\s\d{4}\s\d{4}$|^\d{12}$"
+              placeholder="XXXX XXXX XXXX">
+          </div>
+
+          <div class="form-group">
+            <label for="student-parent-name" class="required">Parent/Guardian Name</label>
+            <input type="text" id="student-parent-name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="student-parent-phone" class="required">Parent Contact Number</label>
+            <div class="phone-input-container">
+              <span class="phone-prefix">+91</span>
+              <input type="tel" id="student-parent-phone" pattern="^[6-9]\d{9}$" placeholder="9876543210" required>
+            </div>
+          </div>
+
+          <div class="form-group span-2">
+            <label for="student-address" class="required">Address (Indian Format)</label>
+            <textarea id="student-address" rows="2" placeholder="House No, Street, Landmark, City, State, Pincode"
+              required></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-student-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-student-btn">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- UPI Payment Simulation Dialog -->
+  <div id="payment-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+    <div class="modal-content payment-modal-content">
+      <div class="modal-header">
+        <h2 id="payment-modal-title">Complete Digital UPI Payment</h2>
+        <button class="close-modal-btn" id="close-payment-modal">&times;</button>
+      </div>
+      <div class="payment-body">
+        <div class="upi-branding">
+          <span class="upi-logo-text">BHIM UPI</span>
+          <div class="app-logos">
+            <span class="pay-app">Paytm</span>
+            <span class="pay-app">PhonePe</span>
+            <span class="pay-app">GPay</span>
+          </div>
+        </div>
+
+        <div class="payment-details-card">
+          <div class="detail-row">
+            <span>Payee:</span>
+            <strong>Gurukul Academy Ltd.</strong>
+          </div>
+          <div class="detail-row">
+            <span>Student Name:</span>
+            <strong id="pay-student-name">Aarav Patel</strong>
+          </div>
+          <div class="detail-row">
+            <span>Pending Fees Type:</span>
+            <strong id="pay-fee-type">Quarterly Tution Fees</strong>
+          </div>
+          <div class="detail-row total-row">
+            <span>Amount Payable (incl. GST):</span>
+            <span class="amount-val" id="pay-amount">₹12,450.00</span>
+          </div>
+        </div>
+
+        <div class="qr-code-section">
+          <p class="qr-instruction">Scan this QR code using any UPI app to pay</p>
+          <div class="qr-code-container">
+            <!-- Simulated QR code generated with CSS and nested SVG -->
+            <svg class="qr-code-placeholder" viewBox="0 0 100 100">
+              <!-- Corner anchors -->
+              <rect x="5" y="5" width="25" height="25" fill="#003366" stroke="#FF9933" stroke-width="2" />
+              <rect x="10" y="10" width="15" height="15" fill="#FFFFFF" />
+              <rect x="13" y="13" width="9" height="9" fill="#003366" />
+
+              <rect x="70" y="5" width="25" height="25" fill="#003366" stroke="#FF9933" stroke-width="2" />
+              <rect x="75" y="10" width="15" height="15" fill="#FFFFFF" />
+              <rect x="78" y="13" width="9" height="9" fill="#003366" />
+
+              <rect x="5" y="70" width="25" height="25" fill="#003366" stroke="#FF9933" stroke-width="2" />
+              <rect x="10" y="75" width="15" height="15" fill="#FFFFFF" />
+              <rect x="13" y="78" width="9" height="9" fill="#003366" />
+
+              <!-- Core dots of QR code -->
+              <g fill="#0A2540">
+                <rect x="40" y="10" width="5" height="5" />
+                <rect x="50" y="5" width="5" height="10" />
+                <rect x="60" y="15" width="5" height="5" />
+                <rect x="45" y="25" width="10" height="5" />
+
+                <rect x="10" y="40" width="10" height="5" />
+                <rect x="5" y="50" width="5" height="5" />
+                <rect x="25" y="45" width="5" height="15" />
+
+                <rect x="40" y="40" width="20" height="20" />
+                <rect x="45" y="45" width="10" height="10" fill="#FFFFFF" />
+                <circle cx="50" cy="50" r="3" fill="#138808" /> <!-- Indian Flag touch in qr center -->
+
+                <rect x="70" y="40" width="5" height="10" />
+                <rect x="85" y="45" width="10" height="5" />
+                <rect x="80" y="55" width="5" height="10" />
+
+                <rect x="40" y="70" width="5" height="15" />
+                <rect x="50" y="80" width="15" height="5" />
+                <rect x="55" y="70" width="5" height="5" />
+                <rect x="80" y="75" width="10" height="10" />
+              </g>
+            </svg>
+          </div>
+          <span class="qr-upi-id">VPA: gurukulacademy@sbi</span>
+        </div>
+
+        <div class="alternative-methods">
+          <p class="section-title">Or Pay Via Mobile App Link:</p>
+          <div class="upi-app-buttons">
+            <button class="app-btn paytm-btn">Paytm</button>
+            <button class="app-btn phonepe-btn">PhonePe</button>
+            <button class="app-btn gpay-btn">Google Pay</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-payment-btn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-payment-btn">Simulate Payment Success</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Receipt Modal -->
+  <div id="receipt-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
+    <div class="modal-content receipt-modal-content">
+      <div class="modal-header no-print">
+        <h2 id="receipt-title">Fee Receipt</h2>
+        <button class="close-modal-btn" id="close-receipt-modal">&times;</button>
+      </div>
+      <div class="receipt-print-area" id="receipt-print-area">
+        <!-- Generated Dynamically by JS -->
+      </div>
+      <div class="modal-footer no-print">
+        <button type="button" class="btn btn-secondary" id="close-receipt-btn">Close</button>
+        <button type="button" class="btn btn-primary" id="print-receipt-btn">🖨️ Print Receipt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- E2E Test Runner Modal -->
+  <div id="diagnostics-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="diagnostics-title">
+    <div class="modal-content diagnostics-modal-content"
+      style="max-width: 650px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--color-saffron); border-radius: var(--border-radius-md); box-shadow: var(--shadow-lg);">
+      <div class="modal-header"
+        style="border-bottom: 2px solid var(--color-blue); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="diagnostics-title"
+          style="color: var(--color-blue); margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+          <span>🧪 Gurukul E2E Diagnostics Test Runner</span>
+        </h2>
+        <button class="close-modal-btn" id="close-diagnostics-modal"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted);">&times;</button>
+      </div>
+      <div class="diagnostics-body" style="padding: 20px 0;">
+        <p style="font-size: 0.9rem; margin-bottom: 15px; color: var(--color-text-main); line-height: 1.5;">
+          This test runner automates simulated user interactions to verify sidebar navigation, page loading states,
+          student registration form validation, attendance actions, grades comparisons, timetable views, fees UPI
+          payment checkout, dynamic search, accessibility modes, and browser local storage cache.
+        </p>
+
+        <!-- Controls -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button id="start-tests-btn" class="btn btn-primary"
+            style="background: var(--color-saffron); border-color: var(--color-saffron); padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);">▶
+            Start E2E Suite</button>
+          <button id="reset-tests-btn" class="btn btn-secondary"
+            style="padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);"
+            disabled>Reset</button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="test-progress-bar-container"
+          style="height: 8px; background: var(--color-blue-light); border-radius: 4px; overflow: hidden; margin-bottom: 20px; display: none;">
+          <div id="test-progress-bar"
+            style="width: 0%; height: 100%; background: var(--color-green); transition: width 0.3s ease;"></div>
+        </div>
+
+        <!-- Test Case List -->
+        <div id="test-cases-list"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; padding-right: 5px;">
+          <!-- Dynamically populated test cases -->
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="border-top: 1px solid var(--color-border); padding-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <span id="test-summary-text" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-muted);">Ready
+          to run E2E diagnostic checks.</span>
+        <button type="button" class="btn btn-secondary" id="close-diagnostics-btn"
+          style="padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic JavaScript -->
+  <script src="app.js"></script>
+</body>
+
+</html>
