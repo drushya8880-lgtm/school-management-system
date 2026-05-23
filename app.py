@@ -9,23 +9,21 @@ from mysql.connector import errorcode
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Configuration loading
-import urllib.parse as urlparse
+host = os.getenv("DB_HOST")
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+database = os.getenv("DB_NAME")
+port = int(os.getenv("DB_PORT", 3306))
 
-db_url = os.environ.get('DATABASE_URL') or os.environ.get('JAWSDB_URL') or os.environ.get('CLEARDB_DATABASE_URL')
-
-if db_url:
-    url = urlparse.urlparse(db_url)
-    DB_HOST = url.hostname
-    DB_PORT = url.port or 3306
-    DB_USER = url.username
-    DB_PASSWORD = url.password
-    DB_NAME = url.path.lstrip('/')
-else:
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '3306')
-    DB_USER = os.environ.get('DB_USER', 'root')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
-    DB_NAME = os.environ.get('DB_NAME', 'gurukul_dashboard')
+# Fallback to localhost if env variables do not exist
+if not host:
+    host = "localhost"
+if not user:
+    user = "root"
+if password is None:
+    password = ""
+if not database:
+    database = "gurukul_dashboard"
 
 # Holiday List (for seeder)
 holidays = [
@@ -35,13 +33,13 @@ holidays = [
 
 def get_db_connection(include_db=True):
     config = {
-        'host': DB_HOST,
-        'port': DB_PORT,
-        'user': DB_USER,
-        'password': DB_PASSWORD,
+        'host': host,
+        'port': port,
+        'user': user,
+        'password': password,
     }
     if include_db:
-        config['database'] = DB_NAME
+        config['database'] = database
     return mysql.connector.connect(**config)
 
 def setup_database():
@@ -53,17 +51,17 @@ def setup_database():
         # If database doesn't exist, try to create it
         if err.errno == errorcode.ER_BAD_DB_ERROR:
             try:
-                print(f"Database {DB_NAME} does not exist. Attempting to create it...")
+                print(f"Database {database} does not exist. Attempting to create it...")
                 conn_no_db = get_db_connection(include_db=False)
                 cursor = conn_no_db.cursor()
-                cursor.execute(f"CREATE DATABASE {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+                cursor.execute(f"CREATE DATABASE {database} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
                 cursor.close()
                 conn_no_db.close()
                 
                 # Connect to the newly created database
                 conn = get_db_connection(include_db=True)
             except mysql.connector.Error as create_err:
-                print(f"Failed to create database {DB_NAME}: {create_err}")
+                print(f"Failed to create database {database}: {create_err}")
                 return False
         else:
             print(f"Failed to connect to MySQL: {err}")
