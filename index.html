@@ -11,7 +11,9 @@
   <!-- Google Fonts for English, Hindi, and Regional Scripts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="premium_theme.css">
@@ -200,7 +202,8 @@
           </div>
 
           <!-- Premium Theme Toggle -->
-          <button class="theme-switch-btn" id="theme-toggle-btn" title="Toggle Dark/Light Mode" aria-label="Toggle dark mode">
+          <button class="theme-switch-btn" id="theme-toggle-btn" title="Toggle Dark/Light Mode"
+            aria-label="Toggle dark mode">
             🌙
           </button>
 
@@ -563,37 +566,49 @@
   </div>
 
   <!-- Detailed Teacher Profile & Schedule Modal -->
-  <div id="teacher-profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+  <div id="teacher-profile-modal" class="modal hidden" role="dialog" aria-modal="true"
+    aria-labelledby="profile-modal-title">
     <div class="modal-content" style="max-width: 750px;">
       <div class="modal-header">
         <h2 id="profile-modal-title">Teacher Profile Detail</h2>
         <button class="close-modal-btn" id="close-profile-modal">&times;</button>
       </div>
-      <div class="teacher-profile-layout" style="display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 15px 0;">
+      <div class="teacher-profile-layout"
+        style="display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 15px 0;">
         <!-- Profile info column -->
-        <div class="profile-info-sidebar" style="display:flex; flex-direction:column; align-items:center; text-align:center; border-right: 1px solid var(--color-border); padding-right:20px;">
-          <div id="tp-avatar" style="width: 100px; height: 100px; border-radius:50%; background: var(--color-saffron-light); color: var(--color-saffron); font-size:2.2rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:2px solid var(--color-saffron); box-shadow:0 4px 10px rgba(0,0,0,0.05);">T</div>
+        <div class="profile-info-sidebar"
+          style="display:flex; flex-direction:column; align-items:center; text-align:center; border-right: 1px solid var(--color-border); padding-right:20px;">
+          <div id="tp-avatar"
+            style="width: 100px; height: 100px; border-radius:50%; background: var(--color-saffron-light); color: var(--color-saffron); font-size:2.2rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:2px solid var(--color-saffron); box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+            T</div>
           <h3 id="tp-name" style="margin-bottom:5px; font-size:1.15rem; color:var(--color-blue);">Dr. Rajesh Kumar</h3>
-          <span id="tp-id" style="font-size:0.75rem; background: var(--color-saffron-light); color: var(--color-saffron); padding:2px 8px; border-radius:10px; font-weight:600; margin-bottom:12px;">TCH001</span>
-          
-          <div style="width:100%; text-align:left; font-size:0.85rem; display:flex; flex-direction:column; gap:8px; margin-top:10px; border-top: 1px solid var(--color-border); padding-top:12px;">
+          <span id="tp-id"
+            style="font-size:0.75rem; background: var(--color-saffron-light); color: var(--color-saffron); padding:2px 8px; border-radius:10px; font-weight:600; margin-bottom:12px;">TCH001</span>
+
+          <div
+            style="width:100%; text-align:left; font-size:0.85rem; display:flex; flex-direction:column; gap:8px; margin-top:10px; border-top: 1px solid var(--color-border); padding-top:12px;">
             <div><strong>Qualification:</strong> <span id="tp-qualification">M.Sc., Ph.D.</span></div>
             <div><strong>Experience:</strong> <span id="tp-experience">12 Years</span></div>
             <div><strong>Subject:</strong> <span id="tp-subject">Mathematics</span></div>
             <div><strong>Assigned Class:</strong> <span id="tp-class-section">Class 12 - A</span></div>
             <div><strong>Contact:</strong> <span id="tp-contact">+91 9876543210</span></div>
-            <div><strong>Status:</strong> <span id="tp-status" class="attendance-status-badge present">Available</span></div>
+            <div><strong>Status:</strong> <span id="tp-status" class="attendance-status-badge present">Available</span>
+            </div>
           </div>
         </div>
-        
+
         <!-- Schedule Column & Assignment UI -->
         <div class="profile-schedule-main" style="display:flex; flex-direction:column; gap:16px;">
-          <h4 style="color:var(--color-blue); font-size:1rem; border-bottom: 2px solid var(--color-saffron-light); padding-bottom:6px; margin:0;">Weekly Lecture Schedule</h4>
-          
+          <h4
+            style="color:var(--color-blue); font-size:1rem; border-bottom: 2px solid var(--color-saffron-light); padding-bottom:6px; margin:0;">
+            Weekly Lecture Schedule</h4>
+
           <div style="overflow-x: auto;">
-            <table class="schedule-table" style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:center;">
+            <table class="schedule-table"
+              style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:center;">
               <thead>
-                <tr style="background:var(--color-blue-light); color:var(--color-blue); border-bottom:2px solid var(--color-border);">
+                <tr
+                  style="background:var(--color-blue-light); color:var(--color-blue); border-bottom:2px solid var(--color-border);">
                   <th style="padding:6px;">Day</th>
                   <th style="padding:6px;">Period 1</th>
                   <th style="padding:6px;">Period 2</th>
@@ -609,8 +624,10 @@
           </div>
 
           <!-- Assign Teacher Form UI -->
-          <div class="assign-teacher-section" style="margin-top: 15px; background: rgba(255, 153, 51, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(255, 153, 51, 0.15);">
-            <h4 style="color:var(--color-saffron); font-size:0.95rem; margin-top:0; margin-bottom:10px;">Assign to Class & Section</h4>
+          <div class="assign-teacher-section"
+            style="margin-top: 15px; background: rgba(255, 153, 51, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(255, 153, 51, 0.15);">
+            <h4 style="color:var(--color-saffron); font-size:0.95rem; margin-top:0; margin-bottom:10px;">Assign to Class
+              & Section</h4>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
               <select id="tp-assign-class" style="flex:1; min-width:100px;">
                 <option value="10">Class 10</option>
@@ -622,7 +639,8 @@
                 <option value="B">Section B</option>
                 <option value="C">Section C</option>
               </select>
-              <button class="btn btn-saffron" id="tp-assign-btn" style="padding: 6px 12px; font-size:0.85rem;">Update Assignment</button>
+              <button class="btn btn-saffron" id="tp-assign-btn" style="padding: 6px 12px; font-size:0.85rem;">Update
+                Assignment</button>
             </div>
           </div>
         </div>

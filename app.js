@@ -19,7 +19,7 @@ const initialStudents = [
     attendancePct: 92,
     cgpa: "A1 (9.6)",
     pendingFees: 12450,
-    grades: {math: "A1", science: "A2", english: "A1", sst: "B1", regional: "A1"}
+    grades: { math: "A1", science: "A2", english: "A1", sst: "B1", regional: "A1" }
   },
   {
     id: "stud_2",
@@ -36,7 +36,7 @@ const initialStudents = [
     attendancePct: 88,
     cgpa: "A2 (8.8)",
     pendingFees: 0,
-    grades: {math: "B1", science: "A1", english: "A1", sst: "A2", regional: "A2"}
+    grades: { math: "B1", science: "A1", english: "A1", sst: "A2", regional: "A2" }
   },
   {
     id: "stud_3",
@@ -53,7 +53,7 @@ const initialStudents = [
     attendancePct: 74,
     cgpa: "B2 (7.2)",
     pendingFees: 8200,
-    grades: {math: "C1", science: "B2", english: "B1", sst: "A2", regional: "B2"}
+    grades: { math: "C1", science: "B2", english: "B1", sst: "A2", regional: "B2" }
   },
   {
     id: "stud_4",
@@ -70,7 +70,7 @@ const initialStudents = [
     attendancePct: 96,
     cgpa: "A1 (9.8)",
     pendingFees: 0,
-    grades: {math: "A1", science: "A1", english: "A1", sst: "A1", regional: "A1"}
+    grades: { math: "A1", science: "A1", english: "A1", sst: "A1", regional: "A1" }
   },
   {
     id: "stud_5",
@@ -87,7 +87,7 @@ const initialStudents = [
     attendancePct: 90,
     cgpa: "A2 (9.0)",
     pendingFees: 0,
-    grades: {math: "A2", science: "A1", english: "A1", sst: "A2", regional: "A1"}
+    grades: { math: "A2", science: "A1", english: "A1", sst: "A2", regional: "A1" }
   },
   {
     id: "stud_6",
@@ -104,7 +104,7 @@ const initialStudents = [
     attendancePct: 85,
     cgpa: "A2 (8.6)",
     pendingFees: 4500,
-    grades: {math: "B1", science: "A2", english: "A1", sst: "B1", regional: "A1"}
+    grades: { math: "B1", science: "A2", english: "A1", sst: "B1", regional: "A1" }
   },
   {
     id: "stud_7",
@@ -121,7 +121,7 @@ const initialStudents = [
     attendancePct: 78,
     cgpa: "B1 (8.0)",
     pendingFees: 0,
-    grades: {math: "B2", science: "B1", english: "A2", sst: "B1", regional: "A1"}
+    grades: { math: "B2", science: "B1", english: "A2", sst: "B1", regional: "A1" }
   },
   {
     id: "stud_8",
@@ -138,7 +138,7 @@ const initialStudents = [
     attendancePct: 94,
     cgpa: "A1 (9.4)",
     pendingFees: 15000,
-    grades: {math: "A1", science: "A1", english: "A1", sst: "A2", regional: "A2"}
+    grades: { math: "A1", science: "A1", english: "A1", sst: "A2", regional: "A2" }
   },
   {
     id: "stud_9",
@@ -155,7 +155,7 @@ const initialStudents = [
     attendancePct: 82,
     cgpa: "B1 (8.2)",
     pendingFees: 0,
-    grades: {math: "B2", science: "B2", english: "A2", sst: "B1", regional: "B1"}
+    grades: { math: "B2", science: "B2", english: "A2", sst: "B1", regional: "B1" }
   },
   {
     id: "stud_10",
@@ -172,7 +172,7 @@ const initialStudents = [
     attendancePct: 89,
     cgpa: "A2 (8.9)",
     pendingFees: 6200,
-    grades: {math: "B1", science: "A2", english: "A1", sst: "A2", regional: "A2"}
+    grades: { math: "B1", science: "A2", english: "A1", sst: "A2", regional: "A2" }
   }
 ];
 
@@ -349,12 +349,12 @@ async function refreshStateData() {
     if (resStudents.ok) {
       state.students = await resStudents.json();
     }
-    
+
     const resAttendance = await fetch('/api/attendance');
     if (resAttendance.ok) {
       state.attendance = await resAttendance.json();
     }
-    
+
     const resHistory = await fetch('/api/fees/history');
     if (resHistory.ok) {
       state.paymentHistory = await resHistory.json();
@@ -374,7 +374,7 @@ function checkLoginState() {
   const session = localStorage.getItem("gurukul_admin_session");
   const appLayout = document.querySelector(".app-layout");
   const loginContainer = document.getElementById("login-container");
-  
+
   if (session === "active") {
     if (appLayout) appLayout.classList.remove("hidden");
     if (loginContainer) loginContainer.classList.add("hidden");
@@ -391,11 +391,11 @@ function checkLoginState() {
 function updateHeaderProfile() {
   const name = localStorage.getItem("gurukul_admin_username") || "admin";
   const role = localStorage.getItem("gurukul_admin_role") || "Principal / Administrator";
-  
+
   const profileName = document.querySelector(".profile-name");
   const profileRole = document.querySelector(".profile-role");
   const initialsSpan = document.querySelector(".avatar-initials");
-  
+
   if (profileName) profileName.innerText = name.charAt(0).toUpperCase() + name.slice(1);
   if (profileRole) profileRole.innerText = role;
   if (initialsSpan) initialsSpan.innerText = name.substring(0, 2).toUpperCase();
@@ -410,13 +410,13 @@ function handleLogout() {
 function setupLoginHandler() {
   const loginForm = document.getElementById("login-form");
   const errorMsg = document.getElementById("login-error-msg");
-  
+
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const usernameInput = document.getElementById("login-username").value.trim();
       const passwordInput = document.getElementById("login-password").value;
-      
+
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
@@ -424,7 +424,7 @@ function setupLoginHandler() {
           body: JSON.stringify({ username: usernameInput, password: passwordInput })
         });
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
           localStorage.setItem("gurukul_admin_session", "active");
           localStorage.setItem("gurukul_admin_username", data.username || usernameInput);
@@ -434,7 +434,7 @@ function setupLoginHandler() {
           document.getElementById("login-password").value = "";
           alertToast(`Welcome back, ${data.username || usernameInput}!`);
           addActivity(`${data.username || usernameInput} logged in successfully.`, "auth");
-          
+
           checkLoginState();
           await refreshStateData();
           navigateTo("dashboard");
@@ -448,7 +448,7 @@ function setupLoginHandler() {
       }
     });
   }
-  
+
   const headerLogoutBtn = document.getElementById("header-logout-btn");
   if (headerLogoutBtn) {
     headerLogoutBtn.addEventListener("click", (e) => {
@@ -464,7 +464,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupGlobalEvents();
   setupNetworkSimulator();
   setupLoginHandler();
-  
+
   // Check if logged in first
   if (checkLoginState()) {
     await refreshStateData();
@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 function setupAccessibilitySupport() {
   const a11yBtn = document.getElementById("a11y-btn");
   const a11yDropdown = document.getElementById("a11y-dropdown");
-  
+
   a11yBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     a11yDropdown.classList.toggle("active");
@@ -505,7 +505,7 @@ function setupAccessibilitySupport() {
       }
       localStorage.setItem("gurukul_theme", state.theme);
       document.documentElement.setAttribute("data-theme", state.theme);
-      
+
       if (state.currentView === "dashboard") {
         renderDashboardView(document.getElementById("main-content"));
       } else if (state.currentView === "attendance" && state.attendanceSubView === "insights") {
@@ -548,7 +548,7 @@ function setupAccessibilitySupport() {
 function changeFontSize(size) {
   document.body.classList.remove("a11y-text-sm", "a11y-text-lg", "a11y-text-xl");
   document.querySelectorAll(".a11y-control-btn").forEach(btn => btn.classList.remove("active"));
-  
+
   state.textSize = size;
   localStorage.setItem("gurukul_textSize", size);
 
@@ -665,7 +665,7 @@ function setupNetworkSimulator() {
   netToggle.addEventListener("change", (e) => {
     const isOnline = e.target.checked;
     state.networkStatus = isOnline ? "online" : "offline";
-    
+
     if (isOnline) {
       netText.innerText = "Online (5G)";
       netText.classList.remove("network-status-offline");
@@ -698,18 +698,18 @@ function renderNotificationsList() {
   state.notifications.forEach(n => {
     const li = document.createElement("li");
     li.className = `notif-item ${n.unread ? 'unread' : ''}`;
-    
+
     li.innerHTML = `
       <div class="notif-title">${n.title}</div>
       <div class="notif-time">🕒 ${n.time}</div>
     `;
-    
+
     li.addEventListener("click", () => {
       n.unread = false;
       updateNotificationBadge();
       renderNotificationsList();
     });
-    
+
     list.appendChild(li);
   });
 }
@@ -722,7 +722,7 @@ async function navigateTo(viewId) {
   // Show Loader
   const loader = document.getElementById("loader-overlay");
   if (loader) loader.classList.remove("hidden");
-  
+
   // Set active nav class
   document.querySelectorAll(".nav-item").forEach(item => {
     if (item.getAttribute("data-view") === viewId) {
@@ -754,8 +754,8 @@ async function navigateTo(viewId) {
 
 function renderCurrentView() {
   const container = document.getElementById("main-content");
-  container.innerHTML = ""; 
-  
+  container.innerHTML = "";
+
   switch (state.currentView) {
     case "dashboard":
       renderDashboardView(container);
@@ -1146,7 +1146,7 @@ function renderStudentsList(searchFilter = "") {
     // Name filter match
     const nameMatchVal = `${student.firstName} ${student.lastName}`.toLowerCase();
     const query = searchFilter ? searchFilter.toLowerCase() : nameFilter;
-    
+
     if (query) {
       const idMatch = student.id.toLowerCase().includes(query);
       const rollMatch = student.rollNumber.toString().includes(query);
@@ -1164,10 +1164,10 @@ function renderStudentsList(searchFilter = "") {
   filtered.forEach(student => {
     const card = document.createElement("div");
     card.className = "student-card";
-    
+
     // Generate initials for avatar color
     const initials = `${student.firstName[0]}${student.lastName[0]}`;
-    
+
     let attendanceColor = "var(--color-green)";
     if (student.attendancePct < 75) {
       attendanceColor = "var(--color-danger)";
@@ -1253,10 +1253,10 @@ function openStudentModal(studentId = null) {
     alertToast("⚠️ Modifying student registry requires Online syncing state.");
     return;
   }
-  
+
   modal.classList.remove("hidden");
   form.reset();
-  
+
   if (studentId) {
     document.getElementById("modal-title").innerText = "Edit Student Registry";
     const st = state.students.find(s => s.id === studentId);
@@ -1288,7 +1288,7 @@ document.getElementById("cancel-student-btn").addEventListener("click", () => mo
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  
+
   const id = document.getElementById("student-id").value;
   const rollVal = parseInt(document.getElementById("student-roll").value);
 
@@ -1314,7 +1314,7 @@ form.addEventListener("submit", (e) => {
     attendancePct: id ? state.students.find(s => s.id === id).attendancePct : 100,
     cgpa: id ? state.students.find(s => s.id === id).cgpa : "A1 (9.0)",
     pendingFees: id ? state.students.find(s => s.id === id).pendingFees : 12450,
-    grades: id ? state.students.find(s => s.id === id).grades : {math: "A2", science: "A2", english: "A1", sst: "B1", regional: "A2"}
+    grades: id ? state.students.find(s => s.id === id).grades : { math: "A2", science: "A2", english: "A1", sst: "B1", regional: "A2" }
   };
 
   const url = id ? `/api/students/${id}` : '/api/students';
@@ -1325,23 +1325,23 @@ form.addEventListener("submit", (e) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newStud)
   })
-  .then(async res => {
-    if (res.ok) {
-      alertToast(id ? "Student profile updated successfully." : "New Student enrolled successfully!");
-      addNotification(id ? `Updated profile for ${newStud.firstName} ${newStud.lastName}` : `Enrolled student ${newStud.firstName} ${newStud.lastName}`);
-      addActivity(id ? `Updated student profile: ${newStud.firstName} ${newStud.lastName}` : `Enrolled new student: ${newStud.firstName} ${newStud.lastName} (Roll: ${newStud.rollNumber})`, "students");
-      modal.classList.add("hidden");
-      await refreshStateData();
-      renderStudentsList();
-    } else {
-      const errData = await res.json();
-      alertToast(`⚠️ Save failed: ${errData.message || 'unknown error'}`);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alertToast("⚠️ Server connection error.");
-  });
+    .then(async res => {
+      if (res.ok) {
+        alertToast(id ? "Student profile updated successfully." : "New Student enrolled successfully!");
+        addNotification(id ? `Updated profile for ${newStud.firstName} ${newStud.lastName}` : `Enrolled student ${newStud.firstName} ${newStud.lastName}`);
+        addActivity(id ? `Updated student profile: ${newStud.firstName} ${newStud.lastName}` : `Enrolled new student: ${newStud.firstName} ${newStud.lastName} (Roll: ${newStud.rollNumber})`, "students");
+        modal.classList.add("hidden");
+        await refreshStateData();
+        renderStudentsList();
+      } else {
+        const errData = await res.json();
+        alertToast(`⚠️ Save failed: ${errData.message || 'unknown error'}`);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alertToast("⚠️ Server connection error.");
+    });
 });
 
 function deleteStudent(id) {
@@ -1350,21 +1350,21 @@ function deleteStudent(id) {
     return;
   }
   fetch(`/api/students/${id}`, { method: 'DELETE' })
-  .then(async res => {
-    if (res.ok) {
-      alertToast("Student registry deleted.");
-      addNotification(`Student withdrawn from registry`);
-      addActivity(`Deleted record for student ID: ${id}`, "students");
-      await refreshStateData();
-      renderStudentsList();
-    } else {
-      alertToast("⚠️ Withdrawal failed.");
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alertToast("⚠️ Server connection error.");
-  });
+    .then(async res => {
+      if (res.ok) {
+        alertToast("Student registry deleted.");
+        addNotification(`Student withdrawn from registry`);
+        addActivity(`Deleted record for student ID: ${id}`, "students");
+        await refreshStateData();
+        renderStudentsList();
+      } else {
+        alertToast("⚠️ Withdrawal failed.");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alertToast("⚠️ Server connection error.");
+    });
 }
 
 // --- 3. Attendance Tracker Module ---
@@ -1739,21 +1739,21 @@ function renderAttendanceView(parent) {
           records: state.tempAttendance
         })
       })
-      .then(async res => {
-        if (res.ok) {
-          alertToast("Attendance saved successfully! Cumulative records updated.");
-          addNotification(`Saved attendance roster for date: ${state.selectedAttendanceDate}`);
-          addActivity(`Updated attendance for Class ${state.selectedAttendanceClass || "All"}-${state.selectedAttendanceSection || "All"} (Date: ${state.selectedAttendanceDate}).`, "attendance");
-          await refreshStateData();
-          drawAttendanceRegister();
-        } else {
-          alertToast("⚠️ Failed to save attendance.");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alertToast("⚠️ Server connection error.");
-      });
+        .then(async res => {
+          if (res.ok) {
+            alertToast("Attendance saved successfully! Cumulative records updated.");
+            addNotification(`Saved attendance roster for date: ${state.selectedAttendanceDate}`);
+            addActivity(`Updated attendance for Class ${state.selectedAttendanceClass || "All"}-${state.selectedAttendanceSection || "All"} (Date: ${state.selectedAttendanceDate}).`, "attendance");
+            await refreshStateData();
+            drawAttendanceRegister();
+          } else {
+            alertToast("⚠️ Failed to save attendance.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alertToast("⚠️ Server connection error.");
+        });
     });
 
     updateBtn.addEventListener("click", () => {
@@ -2098,13 +2098,13 @@ function renderGradesView(parent) {
     state.gradesSearchQuery = "";
     state.gradesSortBy = "";
     state.gradesPage = 1;
-    
+
     classFilter.value = "";
     sectionFilter.value = "";
     searchFilter.value = "";
     sortFilter.value = "";
     if (clearBtn) clearBtn.style.display = "none";
-    
+
     drawGradesTable();
   });
 
@@ -2186,7 +2186,7 @@ function drawGradesTable() {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   if (state.gradesPage === undefined) state.gradesPage = 1;
   if (state.gradesPage > totalPages) state.gradesPage = Math.max(1, totalPages);
-  
+
   const startIndex = (state.gradesPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedItems = filtered.slice(startIndex, endIndex);
@@ -2440,22 +2440,22 @@ function openReportCard(studentId) {
         <div style="font-size: 0.85rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 10px;">
           <strong style="display:block; margin-bottom:8px; color:var(--color-blue);">Detailed Daily Logs:</strong>
           ${Object.keys(state.attendance)
-            .filter(key => key.endsWith(attendanceKeyPrefix))
-            .map(key => {
-              const datePart = key.split('_')[0];
-              const status = state.attendance[key];
-              let label = "Present";
-              let sClass = "present";
-              if (status === "A") { label = "Absent"; sClass = "absent"; }
-              else if (status === "L") { label = "Late"; sClass = "late"; }
-              else if (status === "HD") { label = "Half Day"; sClass = "halfday"; }
-              return `
+      .filter(key => key.endsWith(attendanceKeyPrefix))
+      .map(key => {
+        const datePart = key.split('_')[0];
+        const status = state.attendance[key];
+        let label = "Present";
+        let sClass = "present";
+        if (status === "A") { label = "Absent"; sClass = "absent"; }
+        else if (status === "L") { label = "Late"; sClass = "late"; }
+        else if (status === "HD") { label = "Half Day"; sClass = "halfday"; }
+        return `
                 <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--color-border);">
                   <span>${datePart}</span>
                   <span class="attendance-status-badge ${sClass}">${label}</span>
                 </div>
               `;
-            }).join('') || '<div style="color:var(--color-text-muted); text-align:center; padding:10px;">No logs recorded in system database.</div>'}
+      }).join('') || '<div style="color:var(--color-text-muted); text-align:center; padding:10px;">No logs recorded in system database.</div>'}
         </div>
       </div>
 
@@ -2505,7 +2505,7 @@ function openReportCard(studentId) {
     btn.addEventListener("click", (e) => {
       document.querySelectorAll(".profile-tab-btn").forEach(t => t.classList.remove("active"));
       e.currentTarget.classList.add("active");
-      
+
       document.querySelectorAll(".profile-tab-content").forEach(c => c.classList.add("hidden"));
       const tabName = e.currentTarget.getAttribute("data-tab");
       document.getElementById(`tab-${tabName}`).classList.remove("hidden");
@@ -2937,7 +2937,7 @@ function updateTimetableStatsAndDraw() {
     <div class="timetable-stats-card">
       <div class="timetable-stats-icon">📚</div>
       <div class="timetable-stats-info">
-        <span class="timetable-stats-title">Subjects Today (${activeDay.substring(0,3)})</span>
+        <span class="timetable-stats-title">Subjects Today (${activeDay.substring(0, 3)})</span>
         <span class="timetable-stats-val">${subjectsToday.size} Subjects</span>
       </div>
     </div>
@@ -3256,20 +3256,18 @@ function drawTimetableTimeline(panel, schedule, highlight, searchLower) {
     else if (slot.type === "social-studies") subjectClass = "subject-social-studies";
 
     timelineItems += `
-      <div class="timeline-item ${activeItemClass}" style="--subj-color:${
-        slot.type === 'math' ? '#2563eb' :
+      <div class="timeline-item ${activeItemClass}" style="--subj-color:${slot.type === 'math' ? '#2563eb' :
         slot.type === 'science' ? '#16a34a' :
-        slot.type === 'english' ? '#ea580c' :
-        slot.type === 'lab' ? '#9333ea' :
-        slot.type === 'co-curricular' ? '#0d9488' :
-        slot.type === 'social-studies' ? '#06b6d4' : '#4f46e5'
-      }; --subj-glow-rgb:${
-        slot.type === 'math' ? '37,99,235' :
+          slot.type === 'english' ? '#ea580c' :
+            slot.type === 'lab' ? '#9333ea' :
+              slot.type === 'co-curricular' ? '#0d9488' :
+                slot.type === 'social-studies' ? '#06b6d4' : '#4f46e5'
+      }; --subj-glow-rgb:${slot.type === 'math' ? '37,99,235' :
         slot.type === 'science' ? '22,163,74' :
-        slot.type === 'english' ? '234,88,12' :
-        slot.type === 'lab' ? '147,51,234' :
-        slot.type === 'co-curricular' ? '13,148,136' :
-        slot.type === 'social-studies' ? '6,182,212' : '79,70,229'
+          slot.type === 'english' ? '234,88,12' :
+            slot.type === 'lab' ? '147,51,234' :
+              slot.type === 'co-curricular' ? '13,148,136' :
+                slot.type === 'social-studies' ? '6,182,212' : '79,70,229'
       };">
         <div class="timeline-badge">${p.id}</div>
         <div class="timeline-time-info">
@@ -3495,10 +3493,10 @@ function drawFeesCharts() {
   if (typeof Chart === 'undefined') return;
   const ctx = document.getElementById('fees-analytics-chart')?.getContext('2d');
   if (!ctx) return;
-  
+
   const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
   const paidFeesTotal = state.paymentHistory.reduce((acc, p) => acc + p.amountPaid, 0);
-  
+
   new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -3554,36 +3552,36 @@ document.getElementById("confirm-payment-btn").addEventListener("click", () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ studentId: currentPayeeStudentId })
   })
-  .then(async res => {
-    if (res.ok) {
-      const data = await res.json();
-      payModal.classList.add("hidden");
-      alertToast(`UPI payment approved! Printing tax invoice receipt...`);
-      addNotification(`Received fee payment: ₹${data.receipt.amountPaid.toLocaleString('en-IN')} for ${data.receipt.studentName}`);
-      addActivity(`Collected fees payment for ${data.receipt.studentName} (Invoice: ${data.receipt.invoiceNo}).`, "fees");
-      await refreshStateData();
-      
-      // Open Receipt immediately
-      openInvoiceReceipt(data.receipt);
-      
-      if (state.currentView === "fees") {
-        renderFeesView(document.getElementById("main-content"));
+    .then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        payModal.classList.add("hidden");
+        alertToast(`UPI payment approved! Printing tax invoice receipt...`);
+        addNotification(`Received fee payment: ₹${data.receipt.amountPaid.toLocaleString('en-IN')} for ${data.receipt.studentName}`);
+        addActivity(`Collected fees payment for ${data.receipt.studentName} (Invoice: ${data.receipt.invoiceNo}).`, "fees");
+        await refreshStateData();
+
+        // Open Receipt immediately
+        openInvoiceReceipt(data.receipt);
+
+        if (state.currentView === "fees") {
+          renderFeesView(document.getElementById("main-content"));
+        }
+      } else {
+        const errData = await res.json();
+        alertToast(`⚠️ Payment failed: ${errData.message || 'unknown error'}`);
       }
-    } else {
-      const errData = await res.json();
-      alertToast(`⚠️ Payment failed: ${errData.message || 'unknown error'}`);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alertToast("⚠️ Server connection error.");
-  });
+    })
+    .catch(err => {
+      console.error(err);
+      alertToast("⚠️ Server connection error.");
+    });
 });
 
 function openInvoiceReceipt(historyItem) {
   const receiptModal = document.getElementById("receipt-modal");
   const receiptPrintArea = document.getElementById("receipt-print-area");
-  
+
   receiptModal.classList.remove("hidden");
   document.getElementById("receipt-title").innerText = "Official GST Tax Invoice & Receipt";
 
@@ -3657,55 +3655,55 @@ function openInvoiceReceipt(historyItem) {
 // ==========================================================================
 function drawCalendarWidget(container, isDashboard) {
   if (!container) return;
-  
+
   const year = state.calendarYear;
   const month = state.calendarMonth; // 0-indexed
-  
+
   const monthNamesEn = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-  
+
   const monthNameEn = monthNamesEn[month];
   const headerTitle = `${monthNameEn} ${year}`;
 
   // Calculate days
   const firstDayIndex = new Date(year, month, 1).getDay();
   const totalDays = new Date(year, month + 1, 0).getDate();
-  
+
   const currentLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  
+
   let gridHtml = "";
   // Add weekday labels
   currentLabels.forEach(label => {
     gridHtml += `<span class="calendar-day-label">${label}</span>`;
   });
-  
+
   // Empty slots
   for (let i = 0; i < firstDayIndex; i++) {
     gridHtml += `<span class="calendar-cell empty"></span>`;
   }
-  
+
   // Build days
   for (let day = 1; day <= totalDays; day++) {
     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
+
     // Check if holiday
     const holidayMatch = holidays.find(h => h.date === dateString);
-    
+
     // Check if today (May 22, 2026)
     const isToday = (year === 2026 && month === 4 && day === 22);
-    
+
     // Check if exam day (May 28-29, 2026)
     const isExamDay = (year === 2026 && month === 4 && (day === 28 || day === 29));
-    
+
     let cellClass = "calendar-cell";
     let titleAttr = "";
-    
+
     if (isToday) {
       cellClass += " today";
     }
-    
+
     if (holidayMatch) {
       cellClass += " holiday";
       titleAttr = `title="${holidayMatch.name}"`;
@@ -3713,10 +3711,10 @@ function drawCalendarWidget(container, isDashboard) {
       cellClass += " exam-day";
       titleAttr = `title="Term Examination"`;
     }
-    
+
     gridHtml += `<span class="${cellClass}" ${titleAttr}>${day}</span>`;
   }
-  
+
   // Legend HTML
   let legendHtml = "";
   if (isDashboard) {
@@ -3741,7 +3739,7 @@ function drawCalendarWidget(container, isDashboard) {
       </div>
     `;
   }
-  
+
   const containerHtml = `
     <div class="calendar-widget">
       <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); margin-bottom: 15px;">
@@ -3755,9 +3753,9 @@ function drawCalendarWidget(container, isDashboard) {
       ${legendHtml}
     </div>
   `;
-  
+
   container.innerHTML = containerHtml;
-  
+
   // Bind navigation buttons
   container.querySelector(".prev-month-btn").addEventListener("click", () => {
     state.calendarMonth--;
@@ -3767,7 +3765,7 @@ function drawCalendarWidget(container, isDashboard) {
     }
     drawCalendarWidget(container, isDashboard);
   });
-  
+
   container.querySelector(".next-month-btn").addEventListener("click", () => {
     state.calendarMonth++;
     if (state.calendarMonth > 11) {
@@ -3799,18 +3797,16 @@ function alertToast(msg) {
     toast.style.transition = "opacity 0.3s ease-out";
     document.body.appendChild(toast);
   }
-  
+
   toast.innerText = msg;
   toast.style.opacity = "1";
-  
+
   setTimeout(() => {
     toast.style.opacity = "0";
   }, 3500);
 }
 
 // ==========================================================================
-  }
-}
 
 // ==========================================================================
 // UPGRADED SCHOOL ERP DYNAMIC HELPERS & HANDLERS
@@ -3821,19 +3817,19 @@ function drawDashboardCharts() {
     console.warn("Chart.js is not loaded yet.");
     return;
   }
-  
+
   const financeCtx = document.getElementById('finance-chart')?.getContext('2d');
   const enrollmentCtx = document.getElementById('enrollment-chart')?.getContext('2d');
-  
+
   if (!financeCtx || !enrollmentCtx) return;
-  
+
   const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
   const paidFeesTotal = state.paymentHistory.reduce((acc, p) => acc + p.amountPaid, 0);
 
   // GKL Premium gradients
   let financeBg1 = '#22c55e';
   let financeBg2 = '#f97316';
-  
+
   if (financeCtx) {
     const grad1 = financeCtx.createLinearGradient(0, 0, 0, 200);
     grad1.addColorStop(0, '#22c55e');
@@ -3844,7 +3840,7 @@ function drawDashboardCharts() {
     financeBg1 = grad1;
     financeBg2 = grad2;
   }
-  
+
   new Chart(financeCtx, {
     type: 'doughnut',
     data: {
@@ -3872,11 +3868,11 @@ function drawDashboardCharts() {
       }
     }
   });
-  
+
   const class10 = state.students.filter(s => s.class === "10");
   const class11 = state.students.filter(s => s.class === "11");
   const class12 = state.students.filter(s => s.class === "12");
-  
+
   const avg10 = class10.length ? Math.round(class10.reduce((acc, s) => acc + s.attendancePct, 0) / class10.length) : 85;
   const avg11 = class11.length ? Math.round(class11.reduce((acc, s) => acc + s.attendancePct, 0) / class11.length) : 88;
   const avg12 = class12.length ? Math.round(class12.reduce((acc, s) => acc + s.attendancePct, 0) / class12.length) : 92;
@@ -3893,7 +3889,7 @@ function drawDashboardCharts() {
     }
     enrollmentBg = grad;
   }
-  
+
   new Chart(enrollmentCtx, {
     type: 'bar',
     data: {
@@ -3938,23 +3934,23 @@ function renderDashboardActivities() {
   const feedContainer = document.getElementById("dashboard-activity-feed");
   if (!feedContainer) return;
   feedContainer.innerHTML = "";
-  
+
   if (state.activities.length === 0) {
     feedContainer.innerHTML = `<div style="text-align:center; padding:15px; color:var(--color-text-muted); font-size:0.8rem;">No recent activities.</div>`;
     return;
   }
-  
+
   state.activities.forEach(act => {
     const item = document.createElement("div");
     item.className = "activity-item";
-    
+
     let emoji = "⚡";
     if (act.type === "auth") emoji = "🔑";
     else if (act.type === "attendance") emoji = "📅";
     else if (act.type === "fees") emoji = "₹";
     else if (act.type === "students") emoji = "👨‍🎓";
     else if (act.type === "ptm") emoji = "🤝";
-    
+
     item.innerHTML = `
       <div class="activity-icon-wrapper">${emoji}</div>
       <div class="activity-details">
@@ -3970,15 +3966,15 @@ function drawAttendanceInsightsCharts() {
   if (typeof Chart === 'undefined') return;
   const ctx = document.getElementById('class-attendance-chart')?.getContext('2d');
   if (!ctx) return;
-  
+
   const class10 = state.students.filter(s => s.class === "10");
   const class11 = state.students.filter(s => s.class === "11");
   const class12 = state.students.filter(s => s.class === "12");
-  
+
   const avg10 = class10.length ? Math.round(class10.reduce((acc, s) => acc + s.attendancePct, 0) / class10.length) : 85;
   const avg11 = class11.length ? Math.round(class11.reduce((acc, s) => acc + s.attendancePct, 0) / class11.length) : 88;
   const avg12 = class12.length ? Math.round(class12.reduce((acc, s) => acc + s.attendancePct, 0) / class12.length) : 92;
-  
+
   new Chart(ctx, {
     type: 'bar',
     data: {
@@ -4021,11 +4017,11 @@ function drawFeesLedgerTable() {
   const tbody = document.querySelector("#fees-ledger-tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  
+
   const statusFilter = document.getElementById("fees-ledger-status-filter")?.value || "";
   const typeFilter = document.getElementById("fees-ledger-type-filter")?.value || "";
   const searchFilter = document.getElementById("fees-ledger-search")?.value.trim().toLowerCase() || "";
-  
+
   const filtered = (state.paymentHistory || []).filter(item => {
     if (statusFilter && item.status !== statusFilter) return false;
     if (typeFilter && !item.feeType.toLowerCase().includes(typeFilter.toLowerCase())) return false;
@@ -4037,16 +4033,16 @@ function drawFeesLedgerTable() {
     }
     return true;
   });
-  
+
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--color-text-muted);">No transaction invoices found.</td></tr>`;
     return;
   }
-  
+
   filtered.forEach((item, idx) => {
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid var(--color-border)";
-    
+
     tr.innerHTML = `
       <td style="padding: 8px;"><strong>${item.invoiceNo}</strong></td>
       <td style="padding: 8px;">${item.studentName}</td>
@@ -4061,14 +4057,14 @@ function drawFeesLedgerTable() {
         </button>
       </td>
     `;
-    
+
     tr.querySelector(".print-hist-btn").addEventListener("click", () => {
       const originalIndex = state.paymentHistory.findIndex(p => p.invoiceNo === item.invoiceNo);
       if (originalIndex !== -1) {
         openInvoiceReceipt(state.paymentHistory[originalIndex]);
       }
     });
-    
+
     tbody.appendChild(tr);
   });
 }
@@ -4132,12 +4128,12 @@ function animateCounters() {
       el.innerText = item.format(0);
       return;
     }
-    
+
     let current = 0;
     const steps = 25;
     const increment = targetVal / steps;
     let stepCount = 0;
-    
+
     const timer = setInterval(() => {
       current += increment;
       stepCount++;
@@ -4314,10 +4310,10 @@ function renderTeachersList() {
   filtered.forEach(t => {
     const card = document.createElement("div");
     card.className = "student-card teacher-card"; // Reuse layout, style specifically
-    
+
     const initials = `${t.firstName[0]}${t.lastName[0]}`;
     const statusClass = t.status === "Available" ? "present" : "absent";
-    
+
     card.innerHTML = `
       <div class="student-card-header">
         <div class="student-avatar-circle" style="background:var(--color-saffron-light); color:var(--color-saffron); border: 2px solid var(--color-saffron);">${initials}</div>
@@ -4490,7 +4486,7 @@ document.getElementById("teacher-form")?.addEventListener("submit", (e) => {
 
   saveTeachersToLocalStorage();
   document.getElementById("teacher-modal").classList.add("hidden");
-  
+
   // Re-render teachers view
   if (state.currentView === "teachers") {
     renderTeachersView(document.getElementById("main-content"));
@@ -4506,7 +4502,7 @@ function removeTeacher(teacherId) {
     alertToast(`Dr. ${t.firstName} ${t.lastName} removed from faculty.`);
     addNotification(`Removed teacher Dr. ${t.firstName} ${t.lastName}`);
     addActivity(`Removed faculty member: Dr. ${t.firstName} ${t.lastName} (ID: ${teacherId})`, "teachers");
-    
+
     // Re-render
     renderTeachersView(document.getElementById("main-content"));
   }
@@ -4533,7 +4529,7 @@ function openTeacherProfile(teacherId) {
   document.getElementById("tp-subject").innerText = t.subject;
   document.getElementById("tp-class-section").innerText = `Class ${t.class} - ${t.section}`;
   document.getElementById("tp-contact").innerText = `+91 ${t.phone}`;
-  
+
   const statusSpan = document.getElementById("tp-status");
   statusSpan.className = `attendance-status-badge ${t.status === "Available" ? "present" : "absent"}`;
   statusSpan.innerText = t.status;
@@ -4546,9 +4542,9 @@ function openTeacherProfile(teacherId) {
   days.forEach(day => {
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid var(--color-border)";
-    
+
     const slots = t.schedule?.[day] || ["Free", "Free", "Free", "Free", "Free"];
-    
+
     tr.innerHTML = `
       <td style="padding:8px; font-weight:600; text-align:left; background:var(--color-bg-base);">${day}</td>
       <td style="padding:8px; color: ${slots[0] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[0] === "Free" ? "400" : "600"};">${slots[0]}</td>
@@ -4586,14 +4582,14 @@ document.getElementById("tp-assign-btn")?.addEventListener("click", () => {
     t.class = targetClass;
     t.section = targetSection;
     saveTeachersToLocalStorage();
-    
+
     // Update visual info in profile modal
     document.getElementById("tp-class-section").innerText = `Class ${targetClass} - ${targetSection}`;
-    
+
     alertToast(`Assigned Dr. ${t.firstName} ${t.lastName} to Class ${targetClass} - ${targetSection} successfully.`);
     addNotification(`Assigned Dr. ${t.firstName} ${t.lastName} to Class ${targetClass} - ${targetSection}`);
     addActivity(`Updated class assignment for Dr. ${t.firstName} ${t.lastName}: Class ${targetClass} - ${targetSection}`, "teachers");
-    
+
     // Re-render teachers view in background
     renderTeachersView(document.getElementById("main-content"));
   }
