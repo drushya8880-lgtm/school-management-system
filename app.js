@@ -651,6 +651,12 @@ async function navigateTo(viewId) {
     }
   });
 
+  // Render loading skeleton
+  const container = document.getElementById("main-content");
+  if (container) {
+    renderLoadingSkeleton(container, viewId);
+  }
+
   try {
     await refreshStateData();
   } catch (err) {
@@ -701,7 +707,7 @@ function renderCurrentView() {
 function renderDashboardView(parent) {
   // Calculate quick stats
   const totalStudents = state.students.length;
-  const avgAttendance = Math.round(state.students.reduce((acc, s) => acc + s.attendancePct, 0) / totalStudents) || 0;
+  const avgAttendance = Math.round(state.students.reduce((acc, s) => acc + s.attendancePct, 0) / (totalStudents || 1)) || 0;
   const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
 
   const headerHtml = `
@@ -714,6 +720,32 @@ function renderDashboardView(parent) {
         <span class="badge" style="background-color: var(--color-saffron-light); color: var(--color-saffron); font-weight:700; padding:8px 12px; border-radius:8px;">
           Academic Year: 2026-27 (IST)
         </span>
+      </div>
+    </div>
+  `;
+
+  const quickActionsHtml = `
+    <div class="quick-actions-container">
+      <div class="quick-actions-title-row">
+        <h3 style="font-family: var(--font-headings); font-weight: 700; color: var(--color-blue); font-size: 1.1rem; margin-bottom: 8px;">⚡ Quick ERP Actions</h3>
+      </div>
+      <div class="quick-actions-grid">
+        <div class="quick-action-btn" id="qa-enroll-student">
+          <div class="quick-action-icon">➕</div>
+          <span style="margin-top: 6px;">Enroll Student</span>
+        </div>
+        <div class="quick-action-btn" id="qa-mark-attendance">
+          <div class="quick-action-icon">📅</div>
+          <span style="margin-top: 6px;">Mark Attendance</span>
+        </div>
+        <div class="quick-action-btn" id="qa-collect-fees">
+          <div class="quick-action-icon">₹</div>
+          <span style="margin-top: 6px;">Collect Fees</span>
+        </div>
+        <div class="quick-action-btn" id="qa-run-diagnostics">
+          <div class="quick-action-icon">🧪</div>
+          <span style="margin-top: 6px;">Run Diagnostics</span>
+        </div>
       </div>
     </div>
   `;
@@ -900,7 +932,7 @@ function renderDashboardView(parent) {
     </div>
   `;
 
-  parent.innerHTML = headerHtml + statsHtml + rowHtml;
+  parent.innerHTML = headerHtml + quickActionsHtml + statsHtml + rowHtml;
 
   const calendarContainer = document.getElementById("dashboard-calendar-container");
   if (calendarContainer) {
@@ -910,19 +942,39 @@ function renderDashboardView(parent) {
   // Draw timeline and dynamic analytics
   renderDashboardActivities();
   drawDashboardCharts();
+  animateCounters();
+
+  // Bind quick action click events
+  document.getElementById("qa-enroll-student")?.addEventListener("click", () => {
+    navigateTo("students");
+    setTimeout(() => {
+      openStudentModal();
+    }, 450);
+  });
+  document.getElementById("qa-mark-attendance")?.addEventListener("click", () => {
+    navigateTo("attendance");
+  });
+  document.getElementById("qa-collect-fees")?.addEventListener("click", () => {
+    navigateTo("fees");
+  });
+  document.getElementById("qa-run-diagnostics")?.addEventListener("click", () => {
+    openDiagnosticsModal();
+  });
 
   // Bind weather dropdown handler
   const weatherSelect = document.getElementById("weather-city-selector");
-  weatherSelect.addEventListener("change", (e) => {
-    const cityKey = e.target.value;
-    const details = cityWeather[cityKey];
-    if (details) {
-      document.getElementById("weather-temp-val").innerText = details.temp;
-      document.getElementById("weather-desc-val").innerText = details.condition;
-      document.getElementById("weather-city-val").innerText = details.match;
-      document.getElementById("weather-humidity-val").innerText = details.humidity;
-    }
-  });
+  if (weatherSelect) {
+    weatherSelect.addEventListener("change", (e) => {
+      const cityKey = e.target.value;
+      const details = cityWeather[cityKey];
+      if (details) {
+        document.getElementById("weather-temp-val").innerText = details.temp;
+        document.getElementById("weather-desc-val").innerText = details.condition;
+        document.getElementById("weather-city-val").innerText = details.match;
+        document.getElementById("weather-humidity-val").innerText = details.humidity;
+      }
+    });
+  }
 }
 
 // --- 2. Students Section View (CRUD) ---
@@ -4131,6 +4183,21 @@ function drawDashboardCharts() {
   
   const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
   const paidFeesTotal = state.paymentHistory.reduce((acc, p) => acc + p.amountPaid, 0);
+
+  // GKL Premium gradients
+  let financeBg1 = '#22c55e';
+  let financeBg2 = '#f97316';
+  
+  if (financeCtx) {
+    const grad1 = financeCtx.createLinearGradient(0, 0, 0, 200);
+    grad1.addColorStop(0, '#22c55e');
+    grad1.addColorStop(1, '#16a34a');
+    const grad2 = financeCtx.createLinearGradient(0, 0, 0, 200);
+    grad2.addColorStop(0, '#f97316');
+    grad2.addColorStop(1, '#ea580c');
+    financeBg1 = grad1;
+    financeBg2 = grad2;
+  }
   
   new Chart(financeCtx, {
     type: 'doughnut',
@@ -4138,20 +4205,22 @@ function drawDashboardCharts() {
       labels: ['Fees Collected', 'Pending Dues'],
       datasets: [{
         data: [paidFeesTotal || 150000, pendingFeesTotal || 45000],
-        backgroundColor: ['#22c55e', '#f97316'],
+        backgroundColor: [financeBg1, financeBg2],
         borderWidth: state.theme === 'dark' ? 2 : 1,
-        borderColor: state.theme === 'dark' ? '#0f172a' : '#ffffff'
+        borderColor: state.theme === 'dark' ? '#161e31' : '#ffffff',
+        hoverOffset: 4
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      cutout: '72%',
       plugins: {
         legend: {
           position: 'bottom',
           labels: {
             color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
-            font: { family: 'Poppins', size: 10 }
+            font: { family: 'Outfit', size: 11, weight: '500' }
           }
         }
       }
@@ -4165,6 +4234,19 @@ function drawDashboardCharts() {
   const avg10 = class10.length ? Math.round(class10.reduce((acc, s) => acc + s.attendancePct, 0) / class10.length) : 85;
   const avg11 = class11.length ? Math.round(class11.reduce((acc, s) => acc + s.attendancePct, 0) / class11.length) : 88;
   const avg12 = class12.length ? Math.round(class12.reduce((acc, s) => acc + s.attendancePct, 0) / class12.length) : 92;
+
+  let enrollmentBg = state.theme === 'dark' ? '#38bdf8' : '#002D62';
+  if (enrollmentCtx) {
+    const grad = enrollmentCtx.createLinearGradient(0, 0, 0, 250);
+    if (state.theme === 'dark') {
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(1, '#0284c7');
+    } else {
+      grad.addColorStop(0, '#002D62');
+      grad.addColorStop(1, '#001a39');
+    }
+    enrollmentBg = grad;
+  }
   
   new Chart(enrollmentCtx, {
     type: 'bar',
@@ -4173,8 +4255,9 @@ function drawDashboardCharts() {
       datasets: [{
         label: 'Avg Attendance %',
         data: [avg10, avg11, avg12],
-        backgroundColor: state.theme === 'dark' ? '#38bdf8' : '#002D62',
-        borderRadius: 4
+        backgroundColor: enrollmentBg,
+        borderRadius: 8,
+        barPercentage: 0.55
       }]
     },
     options: {
@@ -4184,17 +4267,17 @@ function drawDashboardCharts() {
         y: {
           beginAtZero: true,
           max: 100,
-          grid: { color: state.theme === 'dark' ? '#1e293b' : '#E2D7C3' },
+          grid: { color: state.theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' },
           ticks: {
             color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
-            font: { family: 'Poppins', size: 9 }
+            font: { family: 'Inter', size: 10 }
           }
         },
         x: {
           grid: { display: false },
           ticks: {
             color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
-            font: { family: 'Poppins', size: 9 }
+            font: { family: 'Outfit', size: 11, weight: '500' }
           }
         }
       },
@@ -4343,5 +4426,84 @@ function drawFeesLedgerTable() {
     tbody.appendChild(tr);
   });
 }
+
+function renderLoadingSkeleton(container, viewId) {
+  if (!container) return;
+  if (viewId === "dashboard") {
+    container.innerHTML = `
+      <div class="skeleton-wrapper">
+        <div class="skeleton-element skeleton-header" style="width: 350px; height: 40px; margin-bottom: 24px;"></div>
+        <div class="skeleton-grid">
+          <div class="skeleton-element skeleton-card"></div>
+          <div class="skeleton-element skeleton-card"></div>
+          <div class="skeleton-element skeleton-card"></div>
+          <div class="skeleton-element skeleton-card"></div>
+        </div>
+        <div class="skeleton-row-main">
+          <div class="skeleton-element skeleton-panel" style="height: 380px;"></div>
+          <div class="skeleton-element skeleton-panel" style="height: 380px;"></div>
+        </div>
+      </div>
+    `;
+  } else if (viewId === "students") {
+    container.innerHTML = `
+      <div class="skeleton-wrapper">
+        <div class="skeleton-element skeleton-header" style="width: 300px; height: 40px; margin-bottom: 24px;"></div>
+        <div class="skeleton-element" style="height: 60px; border-radius: 12px; margin-bottom: 24px;"></div>
+        <div class="skeleton-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+          <div class="skeleton-element" style="height: 250px; border-radius: 16px;"></div>
+          <div class="skeleton-element" style="height: 250px; border-radius: 16px;"></div>
+          <div class="skeleton-element" style="height: 250px; border-radius: 16px;"></div>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="skeleton-wrapper">
+        <div class="skeleton-element skeleton-header" style="width: 280px; height: 40px; margin-bottom: 24px;"></div>
+        <div class="skeleton-element skeleton-panel" style="height: 400px; border-radius: 16px;"></div>
+      </div>
+    `;
+  }
+}
+
+function animateCounters() {
+  const totalStudents = state.students.length;
+  const avgAttendance = Math.round(state.students.reduce((acc, s) => acc + s.attendancePct, 0) / (totalStudents || 1)) || 0;
+  const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
+
+  const elements = [
+    { selector: '.stats-card.saffron-border .stats-value', target: totalStudents, format: val => `${val} Students` },
+    { selector: '.stats-card.green-border .stats-value', target: avgAttendance, format: val => `${val}%` },
+    { selector: '.stats-card.gold-border .stats-value', target: pendingFeesTotal, format: val => `₹${val.toLocaleString('en-IN')}` }
+  ];
+
+  elements.forEach(item => {
+    const el = document.querySelector(item.selector);
+    if (!el) return;
+    const targetVal = isNaN(item.target) ? 0 : item.target;
+    if (targetVal === 0) {
+      el.innerText = item.format(0);
+      return;
+    }
+    
+    let current = 0;
+    const steps = 25;
+    const increment = targetVal / steps;
+    let stepCount = 0;
+    
+    const timer = setInterval(() => {
+      current += increment;
+      stepCount++;
+      if (stepCount >= steps || current >= targetVal) {
+        el.innerText = item.format(targetVal);
+        clearInterval(timer);
+      } else {
+        el.innerText = item.format(Math.round(current));
+      }
+    }, 15);
+  });
+}
+
 
 
