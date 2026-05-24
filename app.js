@@ -893,11 +893,10 @@ function renderStudentsList(searchFilter = "") {
     const query = searchFilter ? searchFilter.toLowerCase() : nameFilter;
     
     if (query) {
-      const isRollNum = !isNaN(query);
-      if (isRollNum) {
-        return student.rollNumber.toString() === query;
-      }
-      return nameMatchVal.includes(query);
+      const idMatch = student.id.toLowerCase().includes(query);
+      const rollMatch = student.rollNumber.toString().includes(query);
+      const nameMatch = nameMatchVal.includes(query);
+      return idMatch || rollMatch || nameMatch;
     }
     return true;
   });
@@ -925,6 +924,7 @@ function renderStudentsList(searchFilter = "") {
       <div class="student-card-header">
         <div class="student-avatar-circle">${initials}</div>
         <div class="student-header-meta">
+          <span class="student-id-badge" style="font-size: 0.7rem; font-weight: 700; background-color: var(--color-saffron-light); color: var(--color-saffron); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 4px; display: inline-block; border: 1px solid rgba(255, 153, 51, 0.3);">ID: ${student.id}</span>
           <span class="student-roll-badge">Roll: ${student.rollNumber}</span>
           <span class="student-class-badge">Class ${student.class} - ${student.section}</span>
         </div>
@@ -1120,7 +1120,8 @@ function getFilteredStudentsForAttendance() {
     if (searchQuery) {
       const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
       const rollStr = student.rollNumber.toString();
-      return fullName.includes(searchQuery) || rollStr.includes(searchQuery);
+      const idStr = student.id.toLowerCase();
+      return fullName.includes(searchQuery) || rollStr.includes(searchQuery) || idStr.includes(searchQuery);
     }
     return true;
   });
@@ -1254,9 +1255,9 @@ function renderAttendanceView(parent) {
             <table class="attendance-table">
               <thead>
                 <tr>
-                  <th>Roll No</th>
+                  <th>Student ID</th>
+                  <th>Roll Number</th>
                   <th>Student Name</th>
-                  <th>Class / Section</th>
                   <th>Status</th>
                   <th style="text-align:right">Update Attendance</th>
                 </tr>
@@ -1573,12 +1574,10 @@ function drawAttendanceRegister() {
     }
 
     tr.innerHTML = `
+      <td><code>${student.id}</code></td>
       <td><strong>${student.rollNumber}</strong></td>
       <td>
         <div><strong>${student.firstName} ${student.lastName}</strong></div>
-      </td>
-      <td>
-        <span style="font-weight:500">Class ${student.class} - ${student.section}</span>
       </td>
       <td>
         <span class="attendance-status-badge ${statusClass}">${statusText}</span>
@@ -1750,9 +1749,11 @@ function openReportCard(studentId) {
       </div>
 
       <div class="report-student-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; margin-bottom: 20px;">
-        <div><strong>Student Name:</strong> ${student.firstName} ${student.middleName} ${student.lastName}</div>
+        <div><strong>Student ID:</strong> ${student.id}</div>
         <div><strong>Roll Number:</strong> ${student.rollNumber}</div>
+        <div><strong>Student Name:</strong> ${student.firstName} ${student.middleName} ${student.lastName}</div>
         <div><strong>Class & Section:</strong> Class ${student.class} - ${student.section}</div>
+        <div><strong>Attendance Percentage:</strong> ${student.attendancePct}%</div>
         <div><strong>Aadhaar Number:</strong> ${student.aadhaar || "Not Submitted"}</div>
         <div><strong>Parent Name:</strong> ${student.parentName}</div>
       </div>
