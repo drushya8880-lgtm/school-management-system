@@ -678,9 +678,6 @@ function renderCurrentView() {
     case "fees":
       renderFeesView(container);
       break;
-    case "admin-mgmt":
-      renderAdminMgmtView(container);
-      break;
     default:
       container.innerHTML = "<h2>View Not Found</h2>";
   }
@@ -1757,6 +1754,12 @@ function drawAttendanceRegister() {
 
 // --- 4. Grades & Reports view ---
 function renderGradesView(parent) {
+  // Initialize state filters if they don't exist
+  if (state.gradesClassFilter === undefined) state.gradesClassFilter = "";
+  if (state.gradesSectionFilter === undefined) state.gradesSectionFilter = "";
+  if (state.gradesSearchQuery === undefined) state.gradesSearchQuery = "";
+  if (state.gradesSortBy === undefined) state.gradesSortBy = "";
+
   const headerHtml = `
     <div class="view-header">
       <div class="view-title-area">
@@ -1771,35 +1774,68 @@ function renderGradesView(parent) {
       
       <!-- Interactive Grade Table -->
       <div class="panel-card">
-        <h3 class="panel-title">Student Merit List & Percentiles</h3>
-        <span class="panel-subtitle-hi">Merit Board Directory</span>
+        <div class="panel-title-row" style="margin-bottom: 10px;">
+          <div>
+            <h3 class="panel-title">Student Merit List & Percentiles</h3>
+            <span class="panel-subtitle-hi">Merit Board Directory</span>
+          </div>
+          <span id="grades-count" style="font-size:0.85rem; font-weight:600; color:var(--color-saffron);">Showing 0 students</span>
+        </div>
+
+        <!-- Filters & Sorting row -->
+        <div class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; padding: 12px; margin-bottom: 15px; box-shadow: none; border: 1px solid var(--color-border); border-radius: var(--border-radius-md);">
+          <div class="filter-group" style="flex: 1; min-width: 100px;">
+            <label for="grades-class-filter" style="font-size: 0.75rem; font-weight: 600;">Class</label>
+            <select id="grades-class-filter" style="padding: 6px; font-size: 0.8rem; width: 100%;">
+              <option value="">All Classes</option>
+              <option value="10" ${state.gradesClassFilter === '10' ? 'selected' : ''}>Class 10</option>
+              <option value="11" ${state.gradesClassFilter === '11' ? 'selected' : ''}>Class 11</option>
+              <option value="12" ${state.gradesClassFilter === '12' ? 'selected' : ''}>Class 12</option>
+            </select>
+          </div>
+          <div class="filter-group" style="flex: 1; min-width: 100px;">
+            <label for="grades-section-filter" style="font-size: 0.75rem; font-weight: 600;">Section</label>
+            <select id="grades-section-filter" style="padding: 6px; font-size: 0.8rem; width: 100%;">
+              <option value="">All Sections</option>
+              <option value="A" ${state.gradesSectionFilter === 'A' ? 'selected' : ''}>Section A</option>
+              <option value="B" ${state.gradesSectionFilter === 'B' ? 'selected' : ''}>Section B</option>
+              <option value="C" ${state.gradesSectionFilter === 'C' ? 'selected' : ''}>Section C</option>
+            </select>
+          </div>
+          <div class="filter-group" style="flex: 2; min-width: 150px;">
+            <label for="grades-search-filter" style="font-size: 0.75rem; font-weight: 600;">Search Student</label>
+            <input type="text" id="grades-search-filter" value="${state.gradesSearchQuery}" placeholder="Name or Roll..." style="padding: 6px; font-size: 0.8rem; width: 100%;">
+          </div>
+          <div class="filter-group" style="flex: 1.5; min-width: 120px;">
+            <label for="grades-sort-filter" style="font-size: 0.75rem; font-weight: 600;">Sort By</label>
+            <select id="grades-sort-filter" style="padding: 6px; font-size: 0.8rem; width: 100%;">
+              <option value="" ${state.gradesSortBy === '' ? 'selected' : ''}>Default</option>
+              <option value="cgpa" ${state.gradesSortBy === 'cgpa' ? 'selected' : ''}>CGPA (High-Low)</option>
+              <option value="attendance" ${state.gradesSortBy === 'attendance' ? 'selected' : ''}>Attendance (High-Low)</option>
+              <option value="name" ${state.gradesSortBy === 'name' ? 'selected' : ''}>Name (A-Z)</option>
+            </select>
+          </div>
+          <div class="filter-group" style="display: flex; align-items: flex-end; min-width: 80px;">
+            <button id="grades-reset-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; width: 100%;">Reset</button>
+          </div>
+        </div>
         
-        <table class="attendance-table" style="margin-top:15px">
-          <thead>
-            <tr>
-              <th>Roll</th>
-              <th>Student Name</th>
-              <th>CBSE Grade</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.students.map(s => `
+        <div style="overflow-x: auto;">
+          <table class="attendance-table" style="margin-top: 5px; width: 100%;">
+            <thead>
               <tr>
-                <td>${s.rollNumber}</td>
-                <td>
-                  <strong>${s.firstName} ${s.lastName}</strong>
-                </td>
-                <td><span style="font-weight:700; color:var(--color-green)">${s.cgpa}</span></td>
-                <td>
-                  <button class="btn btn-secondary gen-report-btn" data-id="${s.id}" style="padding:6px 12px; font-size:0.75rem">
-                    Generate Report Card
-                  </button>
-                </td>
+                <th style="padding: 8px;">Roll</th>
+                <th style="padding: 8px;">Student Name</th>
+                <th style="padding: 8px; text-align: center;">Class/Sec</th>
+                <th style="padding: 8px; text-align: center;">CBSE Grade</th>
+                <th style="padding: 8px; text-align: right;">Action</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody id="grades-tbody">
+              <!-- Loaded dynamically by drawGradesTable -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Graph comparison widget -->
@@ -1853,14 +1889,6 @@ function renderGradesView(parent) {
 
   parent.innerHTML = headerHtml + dashboardGradesHtml;
 
-  // Bind report card button clicks
-  document.querySelectorAll(".gen-report-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const studId = e.target.getAttribute("data-id");
-      openReportCard(studId);
-    });
-  });
-
   // Bind PTM Scheduler submit
   document.getElementById("ptm-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1870,6 +1898,121 @@ function renderGradesView(parent) {
     alertToast(`PTM session scheduled with ${stud.parentName} for ${dateVal}. SMS reminder sent to +91 ${stud.parentPhone}`);
     addNotification(`PTM scheduled for ${stud.firstName} ${stud.lastName} on ${dateVal}`);
     addActivity(`Scheduled PTM with parent ${stud.parentName} for ${stud.firstName}.`, "ptm");
+  });
+
+  // Bind Filter & Sort Events
+  const classFilter = document.getElementById("grades-class-filter");
+  const sectionFilter = document.getElementById("grades-section-filter");
+  const searchFilter = document.getElementById("grades-search-filter");
+  const sortFilter = document.getElementById("grades-sort-filter");
+  const resetBtn = document.getElementById("grades-reset-btn");
+
+  classFilter.addEventListener("change", (e) => {
+    state.gradesClassFilter = e.target.value;
+    drawGradesTable();
+  });
+
+  sectionFilter.addEventListener("change", (e) => {
+    state.gradesSectionFilter = e.target.value;
+    drawGradesTable();
+  });
+
+  searchFilter.addEventListener("input", (e) => {
+    state.gradesSearchQuery = e.target.value.trim().toLowerCase();
+    drawGradesTable();
+  });
+
+  sortFilter.addEventListener("change", (e) => {
+    state.gradesSortBy = e.target.value;
+    drawGradesTable();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    state.gradesClassFilter = "";
+    state.gradesSectionFilter = "";
+    state.gradesSearchQuery = "";
+    state.gradesSortBy = "";
+    
+    classFilter.value = "";
+    sectionFilter.value = "";
+    searchFilter.value = "";
+    sortFilter.value = "";
+    
+    drawGradesTable();
+  });
+
+  // Initial table draw
+  drawGradesTable();
+}
+
+function drawGradesTable() {
+  const tbody = document.getElementById("grades-tbody");
+  const countLabel = document.getElementById("grades-count");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const classFilter = state.gradesClassFilter || "";
+  const sectionFilter = state.gradesSectionFilter || "";
+  const searchQuery = state.gradesSearchQuery || "";
+  const sortBy = state.gradesSortBy || "";
+
+  // Filter students
+  let filtered = state.students.filter(s => {
+    if (classFilter && s.class !== classFilter) return false;
+    if (sectionFilter && s.section !== sectionFilter) return false;
+    if (searchQuery) {
+      const name = `${s.firstName} ${s.lastName}`.toLowerCase();
+      const roll = s.rollNumber.toString();
+      return name.includes(searchQuery) || roll.includes(searchQuery);
+    }
+    return true;
+  });
+
+  // Sort students
+  if (sortBy === "cgpa") {
+    filtered.sort((a, b) => {
+      const valA = parseFloat(a.cgpa.match(/\d+(\.\d+)?/)?.[0] || 0);
+      const valB = parseFloat(b.cgpa.match(/\d+(\.\d+)?/)?.[0] || 0);
+      return valB - valA;
+    });
+  } else if (sortBy === "attendance") {
+    filtered.sort((a, b) => b.attendancePct - a.attendancePct);
+  } else if (sortBy === "name") {
+    filtered.sort((a, b) => {
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }
+
+  // Update count
+  if (countLabel) {
+    countLabel.innerText = `Showing ${filtered.length} student${filtered.length === 1 ? '' : 's'}`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--color-text-muted);">No student records found.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--color-border)";
+    tr.innerHTML = `
+      <td style="padding: 8px;">${s.rollNumber}</td>
+      <td style="padding: 8px;"><strong>${s.firstName} ${s.lastName}</strong></td>
+      <td style="padding: 8px; text-align: center;">Class ${s.class}-${s.section}</td>
+      <td style="padding: 8px; text-align: center;"><span style="font-weight:700; color:var(--color-green)">${s.cgpa}</span></td>
+      <td style="padding: 8px; text-align: right;">
+        <button class="btn btn-secondary gen-report-btn" data-id="${s.id}" style="padding:6px 12px; font-size:0.75rem">
+          Generate Report Card
+        </button>
+      </td>
+    `;
+    tr.querySelector(".gen-report-btn").addEventListener("click", () => {
+      openReportCard(s.id);
+    });
+    tbody.appendChild(tr);
   });
 }
 
@@ -2833,8 +2976,7 @@ const testCases = [
   { id: "timetable", name: "Class Timetable & Co-Curricular slots", description: "Ensures sports, Yoga, and Carnatic music slots render." },
   { id: "fees", name: "Fees Management & UPI Receipt checkout", description: "Simulates paying bills via UPI and verifies tax receipt PDF popups." },
   { id: "search", name: "Dynamic Global Search Redirection", description: "Verifies searching automatically redirects to registry view." },
-  { id: "a11y", name: "A11y Controls & Font Scaling", description: "Toggles contrast theme variables and scales text size classes." },
-  { id: "admin", name: "Admin Role Management & Dark Mode", description: "Verifies admin CRUD actions and theme switching." }
+  { id: "a11y", name: "A11y Controls & Font Scaling", description: "Toggles contrast theme variables and scales text size classes." }
 ];
 
 function resetDiagnosticsRunner() {
@@ -3209,64 +3351,6 @@ async function runE2ETestsSuite() {
   } catch (err) {
     updateBadge("a11y", "failed", err.message);
   }
-  testProgressBar.style.width = "95%";
-
-  // Run Test 11: Admin Management & Dark Mode
-  try {
-    updateBadge("admin", "running");
-    await delay(600);
-    
-    // Test theme toggle to dark mode
-    const themeToggleBtn = document.getElementById("theme-toggle-btn");
-    if (!themeToggleBtn) throw new Error("Theme toggle button is missing.");
-    themeToggleBtn.click();
-    await delay(300);
-    if (document.documentElement.getAttribute("data-theme") !== "dark") throw new Error("Dark theme failed to activate.");
-    
-    // Navigate to Admin Management view
-    navigateTo("admin-mgmt");
-    await delay(500);
-    
-    // Check if CRUD elements render
-    const addAdminBtn = document.getElementById("add-admin-trigger");
-    if (!addAdminBtn) throw new Error("Create Admin button is missing in Admin view.");
-    
-    // Open create admin dialog modal
-    addAdminBtn.click();
-    await delay(400);
-    
-    const adminModal = document.getElementById("admin-modal");
-    if (adminModal.classList.contains("hidden")) throw new Error("Admin registration modal failed to open.");
-    
-    // Fill the fields
-    document.getElementById("admin-username").value = "test_admin";
-    document.getElementById("admin-password").value = "pass12345";
-    document.getElementById("admin-role").value = "Accountant";
-    
-    // Submit form
-    const adminForm = document.getElementById("admin-form");
-    adminForm.dispatchEvent(new Event("submit"));
-    await delay(600);
-    
-    if (!adminModal.classList.contains("hidden")) throw new Error("Admin modal did not close on submit.");
-    
-    // Check that it was added to dashboard activities or notification list
-    const newlyCreated = state.activities.find(act => act.text.includes("test_admin"));
-    if (!newlyCreated) throw new Error("New admin creation activity log was not recorded.");
-    
-    // Clean up: delete the test admin user
-    deleteAdminUser("test_admin");
-    await delay(500);
-    
-    // Revert theme toggle
-    themeToggleBtn.click();
-    await delay(200);
-    
-    updateBadge("admin", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("admin", "failed", err.message);
-  }
   testProgressBar.style.width = "100%";
 
   // Post-Execution Cleanup & Rollbacks
@@ -3528,185 +3612,4 @@ function drawFeesLedgerTable() {
   });
 }
 
-async function renderAdminMgmtView(parent) {
-  const headerHtml = `
-    <div class="view-header">
-      <div class="view-title-area">
-        <span class="view-subtitle-devanagari">System Administration</span>
-        <h2>Admin Role Management</h2>
-      </div>
-      <div class="view-actions">
-        <button class="btn btn-saffron" id="add-admin-trigger">➕ Create Admin User</button>
-      </div>
-    </div>
-  `;
-  
-  parent.innerHTML = headerHtml + `<div class="admin-grid" id="admins-grid-container">Please wait, loading...</div>`;
-  
-  document.getElementById("add-admin-trigger").addEventListener("click", () => {
-    openAdminModal("create");
-  });
-  
-  await drawAdminsList();
-}
-
-async function drawAdminsList() {
-  const container = document.getElementById("admins-grid-container");
-  if (!container) return;
-  
-  try {
-    const res = await fetch('/api/admins');
-    if (!res.ok) throw new Error("Failed to load admin users");
-    const admins = await res.json();
-    
-    container.innerHTML = "";
-    
-    const activeUsername = localStorage.getItem("gurukul_admin_username") || "admin";
-    
-    admins.forEach(ad => {
-      const card = document.createElement("div");
-      card.className = "admin-card";
-      
-      const initials = ad.username.substring(0, 2).toUpperCase();
-      const canDelete = ad.username !== 'admin' && ad.username !== activeUsername;
-      
-      card.innerHTML = `
-        <div style="display:flex; gap:15px; align-items:center;">
-          <div class="admin-avatar">${initials}</div>
-          <div class="admin-info">
-            <span class="admin-username" style="font-weight:600; color:var(--color-blue);">${ad.username.charAt(0).toUpperCase() + ad.username.slice(1)}</span>
-            <span class="admin-role-badge" style="margin-top: 4px;">${ad.role || "Administrator"}</span>
-          </div>
-        </div>
-        <div class="admin-actions">
-          <button class="btn btn-secondary edit-admin-btn" data-username="${ad.username}" data-role="${ad.role || 'Administrator'}" style="padding: 5px 10px; font-size: 0.75rem;">Modify Role</button>
-          ${canDelete ? `<button class="btn delete-admin-btn" data-username="${ad.username}" style="padding: 5px 10px; font-size: 0.75rem; background:var(--color-danger); color:white; border:none;">Delete</button>` : ''}
-        </div>
-      `;
-      
-      card.querySelector(".edit-admin-btn").addEventListener("click", (e) => {
-        const u = e.currentTarget.getAttribute("data-username");
-        const r = e.currentTarget.getAttribute("data-role");
-        openAdminModal("edit", { username: u, role: r });
-      });
-      
-      if (canDelete) {
-        card.querySelector(".delete-admin-btn").addEventListener("click", (e) => {
-          const u = e.currentTarget.getAttribute("data-username");
-          if (confirm(`Are you sure you want to delete administrator: ${u}?`)) {
-            deleteAdminUser(u);
-          }
-        });
-      }
-      
-      container.appendChild(card);
-    });
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<div style="grid-column: span 3; text-align:center; padding:35px; color:var(--color-danger)">⚠️ Failed to load administrative directory from database.</div>`;
-  }
-}
-
-const adminModal = document.getElementById("admin-modal");
-const adminForm = document.getElementById("admin-form");
-
-function openAdminModal(mode, data = null) {
-  adminModal.classList.remove("hidden");
-  adminForm.reset();
-  
-  const title = document.getElementById("admin-modal-title");
-  const usernameInput = document.getElementById("admin-username");
-  const passwordInput = document.getElementById("admin-password");
-  const passwordGroup = document.getElementById("admin-password-group");
-  const roleSelect = document.getElementById("admin-role");
-  const modeInput = document.getElementById("admin-edit-mode");
-  
-  modeInput.value = mode;
-  
-  if (mode === "edit" && data) {
-    title.innerText = "Modify Admin Role";
-    usernameInput.value = data.username;
-    usernameInput.disabled = true;
-    passwordInput.required = false;
-    passwordInput.placeholder = "Leave blank to keep password";
-    roleSelect.value = data.role || "Administrator";
-  } else {
-    title.innerText = "Create Admin User";
-    usernameInput.value = "";
-    usernameInput.disabled = false;
-    passwordInput.required = true;
-    passwordInput.placeholder = "Enter password";
-    roleSelect.value = "Administrator";
-  }
-}
-
-document.getElementById("close-admin-modal")?.addEventListener("click", () => adminModal.classList.add("hidden"));
-document.getElementById("cancel-admin-btn")?.addEventListener("click", () => adminModal.classList.add("hidden"));
-
-adminForm?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  
-  const mode = document.getElementById("admin-edit-mode").value;
-  const username = document.getElementById("admin-username").value.trim();
-  const password = document.getElementById("admin-password").value;
-  const role = document.getElementById("admin-role").value;
-  
-  const payload = { role };
-  if (password) payload.password = password;
-  if (mode === "create") payload.username = username;
-  
-  const url = mode === "edit" ? `/api/admins/${username}` : '/api/admins';
-  const method = mode === "edit" ? 'PUT' : 'POST';
-  
-  fetch(url, {
-    method: method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
-  .then(async res => {
-    if (res.ok) {
-      alertToast(mode === "edit" ? "Admin role updated successfully." : "New administrator created.");
-      addNotification(mode === "edit" ? `Modified administrative role for ${username}` : `Created administrator user: ${username}`);
-      addActivity(mode === "edit" ? `Updated admin role for ${username} to ${role}.` : `Created admin user: ${username} (${role}).`, "auth");
-      
-      if (username === localStorage.getItem("gurukul_admin_username") && mode === "edit") {
-        localStorage.setItem("gurukul_admin_role", role);
-        updateHeaderProfile();
-      }
-      
-      adminModal.classList.add("hidden");
-      if (state.currentView === "admin-mgmt") {
-        drawAdminsList();
-      }
-    } else {
-      const err = await res.json();
-      alertToast(`⚠️ Action failed: ${err.message || 'unknown error'}`);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alertToast("⚠️ Server connection error.");
-  });
-});
-
-function deleteAdminUser(username) {
-  fetch(`/api/admins/${username}`, { method: 'DELETE' })
-  .then(async res => {
-    if (res.ok) {
-      alertToast("Administrator deleted.");
-      addNotification(`Deleted admin user: ${username}`);
-      addActivity(`Deleted admin user: ${username}.`, "auth");
-      if (state.currentView === "admin-mgmt") {
-        drawAdminsList();
-      }
-    } else {
-      const err = await res.json();
-      alertToast(`⚠️ Delete failed: ${err.message}`);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alertToast("⚠️ Server connection error.");
-  });
-}
 

@@ -155,10 +155,6 @@
           <span class="nav-icon">₹</span>
           <span class="nav-label">Fees Management</span>
         </a>
-        <a href="#admin-mgmt" class="nav-item" data-view="admin-mgmt" id="nav-admin-mgmt">
-          <span class="nav-icon">🛡️</span>
-          <span class="nav-label">Admin Management</span>
-        </a>
         <a href="#diagnostics" class="nav-item diagnostics-nav" data-view="diagnostics" id="nav-diagnostics">
           <span class="nav-icon">🧪</span>
           <span class="nav-label">Run E2E Diagnostics</span>
@@ -538,43 +534,6 @@
     </div>
   </div>
 
-  <!-- Admin Add/Edit Dialog Modal -->
-  <div id="admin-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
-    <div class="modal-content" style="width: 420px;">
-      <div class="modal-header">
-        <h2 id="admin-modal-title">Create Admin User</h2>
-        <button class="close-modal-btn" id="close-admin-modal">&times;</button>
-      </div>
-      <form id="admin-form" class="modal-form">
-        <input type="hidden" id="admin-edit-mode" value="create">
-        <div class="form-grid" style="grid-template-columns: 1fr;">
-          <div class="form-group">
-            <label for="admin-username" class="required">Username</label>
-            <input type="text" id="admin-username" required placeholder="Enter username">
-          </div>
-          <div class="form-group" id="admin-password-group">
-            <label for="admin-password" class="required">Password</label>
-            <input type="password" id="admin-password" required placeholder="Enter password">
-          </div>
-          <div class="form-group">
-            <label for="admin-role" class="required">Assigned Role</label>
-            <select id="admin-role" required>
-              <option value="Administrator">Administrator</option>
-              <option value="Principal">Principal</option>
-              <option value="Vice Principal">Vice Principal</option>
-              <option value="Academic Coordinator">Academic Coordinator</option>
-              <option value="Teacher">Teacher</option>
-              <option value="Accountant">Accountant</option>
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer" style="padding-right: 0; padding-bottom: 0; border-top: none; margin-top: 15px;">
-          <button type="button" class="btn btn-secondary" id="cancel-admin-btn">Cancel</button>
-          <button type="submit" class="btn btn-saffron" id="save-admin-btn">Save Administrator</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Application Logic JavaScript -->
   <script src="app.js"></script>
