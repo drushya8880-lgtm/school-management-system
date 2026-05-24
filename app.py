@@ -9,21 +9,28 @@ from mysql.connector import errorcode
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Configuration loading
-host = os.getenv("DB_HOST")
-user = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-database = os.getenv("DB_NAME")
-port = int(os.getenv("DB_PORT", 3306))
+db_host = os.getenv("DB_HOST")
+db_user = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_port = os.getenv("DB_PORT")
 
-# Fallback to localhost if env variables do not exist
-if not host:
+# If env variables exist → use them. Else → use localhost.
+if db_host or db_user or db_password or db_name or db_port:
+    host = db_host if db_host is not None else "localhost"
+    user = db_user if db_user is not None else "root"
+    password = db_password if db_password is not None else ""
+    database = db_name if db_name is not None else "gurukul_dashboard"
+    try:
+        port = int(db_port) if db_port else 3306
+    except ValueError:
+        port = 3306
+else:
     host = "localhost"
-if not user:
     user = "root"
-if password is None:
     password = ""
-if not database:
     database = "gurukul_dashboard"
+    port = 3306
 
 # Holiday List (for seeder)
 holidays = [
