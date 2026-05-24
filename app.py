@@ -58,7 +58,7 @@ def setup_database():
         conn = get_db_connection(include_db=True)
     except psycopg2.Error as err:
         # If database doesn't exist (SQLSTATE 3D000), try to create it
-        if getattr(err, 'pgcode', None) == '3D000':
+        if getattr(err, 'pgcode', None) == '3D000' or 'does not exist' in str(err):
             try:
                 print(f"Database {database} does not exist. Attempting to create it...")
                 conn_no_db = get_db_connection(include_db=False)
@@ -85,9 +85,11 @@ def setup_database():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS admin_users (
                 username VARCHAR(50) PRIMARY KEY,
-                password VARCHAR(50) NOT NULL
+                password VARCHAR(50) NOT NULL,
+                role VARCHAR(50) DEFAULT 'Administrator'
             )
         """)
+        cursor.execute("ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Administrator'")
 
         # Create students table
         cursor.execute("""
@@ -138,7 +140,7 @@ def setup_database():
         # Check and seed admin_users specifically for 'admin' username
         cursor.execute("SELECT COUNT(*) FROM admin_users WHERE username = %s", ('admin',))
         if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO admin_users (username, password) VALUES (%s, %s)", ('admin', 'admin123'))
+            cursor.execute("INSERT INTO admin_users (username, password, role) VALUES (%s, %s, %s)", ('admin', 'admin123', 'Administrator'))
             conn.commit()
             print("Default admin user created successfully!")
 
@@ -349,11 +351,98 @@ def api_login():
         conn.close()
         
         if user:
-            return jsonify({'success': True, 'session': 'active'})
+            return jsonify({
+                'success': True,
+                'session': 'active',
+                'username': user['username'],
+                'role': user.get('role', 'Administrator')
+            })
         else:
             return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
     except psycopg2.Error as err:
         return jsonify({'success': False, 'message': f'Database error: {err}'}), 500
+
+# 1b. Admin Management CRUD APIs
+@app.route('/api/admins', methods=['GET'])
+def get_admins():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("SELECT username, role FROM admin_users ORDER BY username")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(rows)
+    except psycopg2.Error as err:
+        return jsonify({'message': f'Database error: {err}'}), 500
+
+@app.route('/api/admins', methods=['POST'])
+def add_admin():
+    data = request.json or {}
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'Administrator')
+    
+    if not username or not password:
+        return jsonify({'message': 'Missing username or password'}), 400
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM admin_users WHERE username = %s", (username,))
+        if cursor.fetchone()[0] > 0:
+            cursor.close()
+            conn.close()
+            return jsonify({'message': 'Username already exists'}), 409
+            
+        cursor.execute("INSERT INTO admin_users (username, password, role) VALUES (%s, %s, %s)", (username, password, role))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True}), 201
+    except psycopg2.Error as err:
+        return jsonify({'message': f'Database error: {err}'}), 500
+
+@app.route('/api/admins/<username>', methods=['PUT'])
+def update_admin(username):
+    data = request.json or {}
+    password = data.get('password')
+    role = data.get('role')
+    
+    if not role:
+        return jsonify({'message': 'Missing role'}), 400
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if password:
+            cursor.execute("UPDATE admin_users SET password = %s, role = %s WHERE username = %s", (password, role, username))
+        else:
+            cursor.execute("UPDATE admin_users SET role = %s WHERE username = %s", (role, username))
+            
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True})
+    except psycopg2.Error as err:
+        return jsonify({'message': f'Database error: {err}'}), 500
+
+@app.route('/api/admins/<username>', methods=['DELETE'])
+def delete_admin(username):
+    if username == 'admin':
+        return jsonify({'message': 'Cannot delete default admin user'}), 403
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM admin_users WHERE username = %s", (username,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True})
+    except psycopg2.Error as err:
+        return jsonify({'message': f'Database error: {err}'}), 500
 
 # 2. Student List & CRUD APIs
 @app.route('/api/students', methods=['GET'])

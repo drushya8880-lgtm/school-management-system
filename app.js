@@ -200,20 +200,53 @@ const cityWeather = {
 // 2. Application State & Store Initialization
 const state = {
   currentView: "dashboard",
-  theme: "default", // default | high-contrast
+  theme: "default", // default | dark | high-contrast
   textSize: "normal", // sm | normal | lg | xl
   networkStatus: "online", // online | offline
   students: [],
-  notifications: [
+  notifications: JSON.parse(localStorage.getItem("gurukul_notifications")) || [
     { id: "n1", title: "Republic Day Parade & Assembly Scheduled", unread: true, time: "10:00 AM" },
     { id: "n2", title: "Diwali Holidays Announcement (School Closed)", unread: true, time: "Yesterday" },
     { id: "n3", title: "Weekly Yoga & Mindfulness Assembly", unread: false, time: "2 days ago" }
+  ],
+  activities: JSON.parse(localStorage.getItem("gurukul_activities")) || [
+    { id: "act_1", text: "Principal Adarsh Babu logged in.", time: "10:15 AM", type: "auth" },
+    { id: "act_2", text: "Saved trimester attendance for Class 12-A.", time: "09:30 AM", type: "attendance" },
+    { id: "act_3", text: "Fee invoice paid for Aarav Patel.", time: "Yesterday", type: "fees" }
   ],
   calendarYear: 2026,
   calendarMonth: 4, // May (0-indexed)
   attendanceSubView: "rollcall",
   pendingSearch: ""
 };
+
+// Activity & Notification Helpers
+function addActivity(text, type = "system") {
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  state.activities.unshift({
+    id: "act_" + Date.now(),
+    text: text,
+    time: timeStr,
+    type: type
+  });
+  if (state.activities.length > 20) state.activities.pop();
+  localStorage.setItem("gurukul_activities", JSON.stringify(state.activities));
+  if (state.currentView === "dashboard") {
+    renderDashboardActivities();
+  }
+}
+
+function addNotification(title) {
+  state.notifications.unshift({
+    id: "notif_" + Date.now(),
+    title: title,
+    unread: true,
+    time: "Just now"
+  });
+  updateNotificationBadge();
+  renderNotificationsList();
+  localStorage.setItem("gurukul_notifications", JSON.stringify(state.notifications));
+}
 
 // Initialize empty state structures (will load from Python backend DB)
 state.students = [];
@@ -255,6 +288,7 @@ function checkLoginState() {
   if (session === "active") {
     if (appLayout) appLayout.classList.remove("hidden");
     if (loginContainer) loginContainer.classList.add("hidden");
+    updateHeaderProfile();
     return true;
   } else {
     if (appLayout) appLayout.classList.add("hidden");
@@ -262,6 +296,19 @@ function checkLoginState() {
     window.location.hash = "";
     return false;
   }
+}
+
+function updateHeaderProfile() {
+  const name = localStorage.getItem("gurukul_admin_username") || "admin";
+  const role = localStorage.getItem("gurukul_admin_role") || "Principal / Administrator";
+  
+  const profileName = document.querySelector(".profile-name");
+  const profileRole = document.querySelector(".profile-role");
+  const initialsSpan = document.querySelector(".avatar-initials");
+  
+  if (profileName) profileName.innerText = name.charAt(0).toUpperCase() + name.slice(1);
+  if (profileRole) profileRole.innerText = role;
+  if (initialsSpan) initialsSpan.innerText = name.substring(0, 2).toUpperCase();
 }
 
 function handleLogout() {
@@ -290,10 +337,13 @@ function setupLoginHandler() {
         
         if (res.ok && data.success) {
           localStorage.setItem("gurukul_admin_session", "active");
+          localStorage.setItem("gurukul_admin_username", data.username || usernameInput);
+          localStorage.setItem("gurukul_admin_role", data.role || "Principal / Administrator");
           if (errorMsg) errorMsg.classList.add("hidden");
           document.getElementById("login-username").value = "";
           document.getElementById("login-password").value = "";
-          alertToast("Welcome back, DR Adarsh Babu!");
+          alertToast(`Welcome back, ${data.username || usernameInput}!`);
+          addActivity(`${data.username || usernameInput} logged in successfully.`, "auth");
           
           checkLoginState();
           await refreshStateData();
@@ -349,16 +399,46 @@ function setupAccessibilitySupport() {
   document.getElementById("font-normal").addEventListener("click", () => changeFontSize("normal"));
   document.getElementById("font-inc").addEventListener("click", () => changeFontSize("lg"));
 
+  // Premium Theme Toggle
+  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+  if (themeToggleBtn) {
+    themeToggleBtn.innerText = state.theme === "dark" ? "☀️" : "🌙";
+    themeToggleBtn.addEventListener("click", () => {
+      if (state.theme === "dark") {
+        state.theme = "default";
+        themeToggleBtn.innerText = "🌙";
+      } else {
+        state.theme = "dark";
+        themeToggleBtn.innerText = "☀️";
+        const contrastToggle = document.getElementById("contrast-toggle");
+        if (contrastToggle) contrastToggle.checked = false;
+      }
+      localStorage.setItem("gurukul_theme", state.theme);
+      document.documentElement.setAttribute("data-theme", state.theme);
+      
+      if (state.currentView === "dashboard") {
+        renderDashboardView(document.getElementById("main-content"));
+      } else if (state.currentView === "attendance" && state.attendanceSubView === "insights") {
+        renderAttendanceView(document.getElementById("main-content"));
+      } else if (state.currentView === "fees") {
+        renderFeesView(document.getElementById("main-content"));
+      }
+    });
+  }
+
   // Contrast Toggler
   const contrastToggle = document.getElementById("contrast-toggle");
   contrastToggle.checked = state.theme === "high-contrast";
   if (state.theme === "high-contrast") {
     document.documentElement.setAttribute("data-theme", "high-contrast");
+  } else if (state.theme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
   }
 
   contrastToggle.addEventListener("change", (e) => {
     const isHC = e.target.checked;
     state.theme = isHC ? "high-contrast" : "default";
+    if (themeToggleBtn) themeToggleBtn.innerText = "🌙";
     localStorage.setItem("gurukul_theme", state.theme);
     document.documentElement.setAttribute("data-theme", state.theme);
   });
@@ -598,6 +678,9 @@ function renderCurrentView() {
     case "fees":
       renderFeesView(container);
       break;
+    case "admin-mgmt":
+      renderAdminMgmtView(container);
+      break;
     default:
       container.innerHTML = "<h2>View Not Found</h2>";
   }
@@ -684,7 +767,7 @@ function renderDashboardView(parent) {
 
   const rowHtml = `
     <div class="dashboard-main-row">
-      <!-- Left Panel: Calendar Widget & Weather -->
+      <!-- Left Panel: Calendar Widget, Weather & Activity Feed -->
       <div style="display:flex; flex-direction:column; gap:24px;">
         <div class="panel-card">
           <div class="panel-title-row">
@@ -699,7 +782,7 @@ function renderDashboardView(parent) {
         </div>
 
         <!-- Weather Campus Monitor -->
-        <div class="weather-widget">
+        <div class="weather-widget" style="margin-top: 0;">
           <div class="weather-header">
             <h3>☀️ Campus Weather Monitor</h3>
             <select id="weather-city-selector" class="weather-city-select">
@@ -722,6 +805,18 @@ function renderDashboardView(parent) {
             <span>Humidity: <strong id="weather-humidity-val">45%</strong></span>
             <span>IST Timezone: <strong>24Hr (GMT+5:30)</strong></span>
           </div>
+        </div>
+
+        <!-- Recent Activity Feed panel -->
+        <div class="panel-card">
+          <div class="panel-title-row">
+            <div>
+              <h3 class="panel-title">System Activity Log</h3>
+              <span class="panel-subtitle-hi">Recent ERP Operations</span>
+            </div>
+            <span style="font-size:1.5rem">⚡</span>
+          </div>
+          <div class="activity-feed" id="dashboard-activity-feed"></div>
         </div>
       </div>
 
@@ -778,6 +873,24 @@ function renderDashboardView(parent) {
         </div>
       </div>
     </div>
+
+    <!-- Analytics Section (Chart.js) -->
+    <div class="dashboard-main-row" style="margin-top: 24px;">
+      <div class="panel-card">
+        <h3 class="panel-title">Institutional Finance Overview</h3>
+        <span class="panel-subtitle-hi">Fees Collection Status</span>
+        <div class="canvas-chart-holder" style="margin-top: 15px;">
+          <canvas id="finance-chart"></canvas>
+        </div>
+      </div>
+      <div class="panel-card">
+        <h3 class="panel-title">Class Roster Attendance Metrics</h3>
+        <span class="panel-subtitle-hi">Trimester Comparative Analysis</span>
+        <div class="canvas-chart-holder" style="margin-top: 15px;">
+          <canvas id="enrollment-chart"></canvas>
+        </div>
+      </div>
+    </div>
   `;
 
   parent.innerHTML = headerHtml + statsHtml + rowHtml;
@@ -786,6 +899,10 @@ function renderDashboardView(parent) {
   if (calendarContainer) {
     drawCalendarWidget(calendarContainer, true);
   }
+
+  // Draw timeline and dynamic analytics
+  renderDashboardActivities();
+  drawDashboardCharts();
 
   // Bind weather dropdown handler
   const weatherSelect = document.getElementById("weather-city-selector");
@@ -1073,6 +1190,8 @@ form.addEventListener("submit", (e) => {
   .then(async res => {
     if (res.ok) {
       alertToast(id ? "Student profile updated successfully." : "New Student enrolled successfully!");
+      addNotification(id ? `Updated profile for ${newStud.firstName} ${newStud.lastName}` : `Enrolled student ${newStud.firstName} ${newStud.lastName}`);
+      addActivity(id ? `Updated student profile: ${newStud.firstName} ${newStud.lastName}` : `Enrolled new student: ${newStud.firstName} ${newStud.lastName} (Roll: ${newStud.rollNumber})`, "students");
       modal.classList.add("hidden");
       await refreshStateData();
       renderStudentsList();
@@ -1096,6 +1215,8 @@ function deleteStudent(id) {
   .then(async res => {
     if (res.ok) {
       alertToast("Student registry deleted.");
+      addNotification(`Student withdrawn from registry`);
+      addActivity(`Deleted record for student ID: ${id}`, "students");
       await refreshStateData();
       renderStudentsList();
     } else {
@@ -1372,6 +1493,23 @@ function renderAttendanceView(parent) {
               </div>
             </div>
           </div>
+
+          <h4 style="margin-top:20px; font-weight:600; padding-bottom:5px; border-bottom:1px solid var(--color-border)">Class Attendance Rates</h4>
+          <div class="canvas-chart-holder" style="height: 120px; margin-top: 10px;">
+            <canvas id="class-attendance-chart"></canvas>
+          </div>
+          
+          <h4 style="margin-top:20px; font-weight:600; padding-bottom:5px; border-bottom:1px solid var(--color-border)">Critical Roster Alerts</h4>
+          <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+            <div class="latency-alert-item">
+              <span>Kabir Singh Dhillon (Roll 103)</span>
+              <span>Lateness Warning (3 Days) ⚠️</span>
+            </div>
+            <div class="latency-alert-item">
+              <span>Arjun Nair (Roll 107)</span>
+              <span>Low Attendance Index (78%) ⚠️</span>
+            </div>
+          </div>
         </div>
 
         <!-- Calendar Panel -->
@@ -1389,6 +1527,7 @@ function renderAttendanceView(parent) {
     if (calendarContainer) {
       drawCalendarWidget(calendarContainer, false);
     }
+    drawAttendanceInsightsCharts();
   }
 
   // Bind sub-tabs events
@@ -1465,6 +1604,8 @@ function renderAttendanceView(parent) {
       .then(async res => {
         if (res.ok) {
           alertToast("Attendance saved successfully! Cumulative records updated.");
+          addNotification(`Saved attendance roster for date: ${state.selectedAttendanceDate}`);
+          addActivity(`Updated attendance for Class ${state.selectedAttendanceClass || "All"}-${state.selectedAttendanceSection || "All"} (Date: ${state.selectedAttendanceDate}).`, "attendance");
           await refreshStateData();
           drawAttendanceRegister();
         } else {
@@ -1727,6 +1868,8 @@ function renderGradesView(parent) {
     const dateVal = document.getElementById("ptm-date").value;
     const stud = state.students.find(s => s.id === studId);
     alertToast(`PTM session scheduled with ${stud.parentName} for ${dateVal}. SMS reminder sent to +91 ${stud.parentPhone}`);
+    addNotification(`PTM scheduled for ${stud.firstName} ${stud.lastName} on ${dateVal}`);
+    addActivity(`Scheduled PTM with parent ${stud.parentName} for ${stud.firstName}.`, "ptm");
   });
 }
 
@@ -1739,91 +1882,239 @@ function openReportCard(studentId) {
   if (!student) return;
 
   reportModal.classList.remove("hidden");
-  document.getElementById("receipt-title").innerText = "Academic Performance Report Card";
+  document.getElementById("receipt-title").innerText = `Student Profile: ${student.firstName} ${student.lastName}`;
+
+  // Count student attendance stats
+  const attendanceKeyPrefix = `_${student.id}`;
+  let present = 0, absent = 0, late = 0, halfday = 0;
+  Object.keys(state.attendance).forEach(key => {
+    if (key.endsWith(attendanceKeyPrefix)) {
+      const status = state.attendance[key];
+      if (status === "P") present++;
+      else if (status === "A") absent++;
+      else if (status === "L") late++;
+      else if (status === "HD") halfday++;
+    }
+  });
+
+  const studentPayments = (state.paymentHistory || []).filter(p => p.rollNumber === student.rollNumber);
 
   reportArea.innerHTML = `
-    <div class="report-card-view">
-      <div class="report-card-header" style="text-align:center; border-bottom: 2px solid var(--color-blue); padding-bottom:10px; margin-bottom:20px;">
-        <h2 class="report-card-title-en" style="margin: 0; color: var(--color-blue);">GURUKUL ACADEMIC HIGH SCHOOL</h2>
-        <p style="font-size:0.8rem; letter-spacing:1px; margin-top:4px;">AFFILIATED TO CBSE BOARD NEW DELHI | ESTD 2005</p>
-      </div>
-
-      <div class="report-student-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; margin-bottom: 20px;">
-        <div><strong>Student ID:</strong> ${student.id}</div>
-        <div><strong>Roll Number:</strong> ${student.rollNumber}</div>
-        <div><strong>Student Name:</strong> ${student.firstName} ${student.middleName} ${student.lastName}</div>
-        <div><strong>Class & Section:</strong> Class ${student.class} - ${student.section}</div>
-        <div><strong>Attendance Percentage:</strong> ${student.attendancePct}%</div>
-        <div><strong>Aadhaar Number:</strong> ${student.aadhaar || "Not Submitted"}</div>
-        <div><strong>Parent Name:</strong> ${student.parentName}</div>
-      </div>
-
-      <table class="marks-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem;">
-        <thead>
-          <tr style="border-bottom: 2px solid var(--color-blue); text-align: left;">
-            <th style="padding: 8px 0;">Subject Code</th>
-            <th style="padding: 8px 0;">Subject Name</th>
-            <th style="padding: 8px 0; text-align: center;">Trimester Marks (100)</th>
-            <th style="padding: 8px 0; text-align: center;">Grade</th>
-            <th style="padding: 8px 0; text-align: right;">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom: 1px solid var(--color-border);">
-            <td style="padding: 8px 0;">MAT-102</td>
-            <td style="padding: 8px 0;">Mathematics</td>
-            <td style="padding: 8px 0; text-align: center;">94</td>
-            <td style="padding: 8px 0; text-align: center;">${student.grades.math}</td>
-            <td style="padding: 8px 0; text-align: right; color:var(--color-green); font-weight:600">PASSED</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--color-border);">
-            <td style="padding: 8px 0;">SCI-104</td>
-            <td style="padding: 8px 0;">Science</td>
-            <td style="padding: 8px 0; text-align: center;">86</td>
-            <td style="padding: 8px 0; text-align: center;">${student.grades.science}</td>
-            <td style="padding: 8px 0; text-align: right; color:var(--color-green); font-weight:600">PASSED</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--color-border);">
-            <td style="padding: 8px 0;">ENG-101</td>
-            <td style="padding: 8px 0;">English Grammar & Lit.</td>
-            <td style="padding: 8px 0; text-align: center;">92</td>
-            <td style="padding: 8px 0; text-align: center;">${student.grades.english}</td>
-            <td style="padding: 8px 0; text-align: right; color:var(--color-green); font-weight:600">PASSED</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--color-border);">
-            <td style="padding: 8px 0;">SST-103</td>
-            <td style="padding: 8px 0;">Social Studies</td>
-            <td style="padding: 8px 0; text-align: center;">81</td>
-            <td style="padding: 8px 0; text-align: center;">${student.grades.sst}</td>
-            <td style="padding: 8px 0; text-align: right; color:var(--color-green); font-weight:600">PASSED</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--color-border);">
-            <td style="padding: 8px 0;">REG-105</td>
-            <td style="padding: 8px 0;">Elective (Sanskrit)</td>
-            <td style="padding: 8px 0; text-align: center;">95</td>
-            <td style="padding: 8px 0; text-align: center;">${student.grades.regional}</td>
-            <td style="padding: 8px 0; text-align: right; color:var(--color-green); font-weight:600">PASSED</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="display:flex; justify-content:space-between; margin-bottom:40px; font-weight:600; font-size: 0.95rem;">
-        <span>Cumulative CGPA: ${student.cgpa}</span>
-        <span>Average Class Rank: #4 in Section</span>
-      </div>
-
-      <div class="report-signatures" style="display: flex; justify-content: space-between; margin-top: 30px; border-top: 1px dashed var(--color-border); padding-top: 15px;">
-        <div class="sig-block" style="text-align: center;">
-          <br>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);">Class Teacher Signature</span>
+    <div class="student-profile-container">
+      <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 15px;">
+        <div class="student-avatar-circle" style="width: 65px; height: 65px; font-size: 1.4rem; flex-shrink:0;">${student.firstName[0]}${student.lastName[0]}</div>
+        <div>
+          <h3 style="margin: 0; color: var(--color-blue); font-size: 1.25rem;">${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}</h3>
+          <div style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 3px;">
+            Roll Number: <strong>${student.rollNumber}</strong> | Class ${student.class}-${student.section}
+          </div>
         </div>
-        <div class="sig-block" style="text-align: center; display: flex; flex-direction: column;">
-          <strong>DR Adarsh Babu</strong>
-          <span style="font-size: 0.8rem; color: var(--color-text-muted);">Principal / Administrator</span>
+      </div>
+
+      <!-- Profile Tabs -->
+      <div class="profile-tabs-header no-print">
+        <button class="profile-tab-btn active" data-tab="details">Personal Profile</button>
+        <button class="profile-tab-btn" data-tab="academic">Report Card</button>
+        <button class="profile-tab-btn" data-tab="attendance">Attendance Logs</button>
+        <button class="profile-tab-btn" data-tab="fees">Fees & Payments</button>
+      </div>
+
+      <!-- Tab Contents -->
+      
+      <!-- 1. Details Tab -->
+      <div id="tab-details" class="profile-tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;">
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Full Name</span>
+            <strong style="color:var(--color-blue);">${student.firstName} ${student.middleName} ${student.lastName}</strong>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Student ID</span>
+            <code>${student.id}</code>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Aadhaar Number</span>
+            <strong>${student.aadhaar || "Not Submitted"}</strong>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Class & Section</span>
+            <strong>Class ${student.class} - Section ${student.section}</strong>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Parent/Guardian Name</span>
+            <strong>${student.parentName}</strong>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Parent Contact Phone</span>
+            <strong>+91 ${student.parentPhone}</strong>
+          </div>
+          <div style="grid-column: span 2;">
+            <span style="color: var(--color-text-muted); font-size:0.75rem; display:block; margin-bottom:2px;">Residential Address</span>
+            <strong>${student.address}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Academic Tab -->
+      <div id="tab-academic" class="profile-tab-content hidden">
+        <div class="report-card-view">
+          <div class="report-card-header" style="text-align:center; border-bottom: 2px solid var(--color-blue); padding-bottom:10px; margin-bottom:15px;">
+            <h3 class="report-card-title-en" style="margin: 0; color: var(--color-blue);">GURUKUL ACADEMIC HIGH SCHOOL</h3>
+            <p style="font-size:0.7rem; letter-spacing:1px; margin-top:4px;">AFFILIATED TO CBSE BOARD NEW DELHI | ESTD 2005</p>
+          </div>
+
+          <table class="marks-table" style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--color-blue); text-align: left;">
+                <th style="padding: 6px 0; text-align: left; padding-left: 5px;">Subject Name</th>
+                <th style="padding: 6px 0; text-align: center;">Marks (100)</th>
+                <th style="padding: 6px 0; text-align: center;">Grade</th>
+                <th style="padding: 6px 0; text-align: right; padding-right: 5px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="padding: 6px 0; text-align: left; padding-left: 5px;">Mathematics</td>
+                <td style="padding: 6px 0; text-align: center;">94</td>
+                <td style="padding: 6px 0; text-align: center;"><strong>${student.grades?.math || "A2"}</strong></td>
+                <td style="padding: 6px 0; text-align: right; padding-right: 5px; color:var(--color-green); font-weight:600">PASSED</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="padding: 6px 0; text-align: left; padding-left: 5px;">Science</td>
+                <td style="padding: 6px 0; text-align: center;">86</td>
+                <td style="padding: 6px 0; text-align: center;"><strong>${student.grades?.science || "A2"}</strong></td>
+                <td style="padding: 6px 0; text-align: right; padding-right: 5px; color:var(--color-green); font-weight:600">PASSED</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="padding: 6px 0; text-align: left; padding-left: 5px;">English Grammar & Lit.</td>
+                <td style="padding: 6px 0; text-align: center;">92</td>
+                <td style="padding: 6px 0; text-align: center;"><strong>${student.grades?.english || "A1"}</strong></td>
+                <td style="padding: 6px 0; text-align: right; padding-right: 5px; color:var(--color-green); font-weight:600">PASSED</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="padding: 6px 0; text-align: left; padding-left: 5px;">Social Studies</td>
+                <td style="padding: 6px 0; text-align: center;">81</td>
+                <td style="padding: 6px 0; text-align: center;"><strong>${student.grades?.sst || "B1"}</strong></td>
+                <td style="padding: 6px 0; text-align: right; padding-right: 5px; color:var(--color-green); font-weight:600">PASSED</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="padding: 6px 0; text-align: left; padding-left: 5px;">Elective (Sanskrit)</td>
+                <td style="padding: 6px 0; text-align: center;">95</td>
+                <td style="padding: 6px 0; text-align: center;"><strong>${student.grades?.regional || "A1"}</strong></td>
+                <td style="padding: 6px 0; text-align: right; padding-right: 5px; color:var(--color-green); font-weight:600">PASSED</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="display:flex; justify-content:space-between; font-weight:600; font-size: 0.9rem;">
+            <span>Cumulative CGPA: ${student.cgpa}</span>
+            <span>Rank: #4 in Class</span>
+          </div>
+
+          <div class="report-signatures" style="display: flex; justify-content: space-between; margin-top: 25px; border-top: 1px dashed var(--color-border); padding-top: 10px; font-size: 0.8rem;">
+            <div class="sig-block" style="text-align: center; border-top: none; width: auto; padding-top: 0;">
+              <br>
+              <span style="color: var(--color-text-muted);">Class Teacher Signature</span>
+            </div>
+            <div class="sig-block" style="text-align: center; display: flex; flex-direction: column; border-top: none; width: auto; padding-top: 0;">
+              <strong>DR Adarsh Babu</strong>
+              <span style="color: var(--color-text-muted);">Principal / Administrator</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Attendance Tab -->
+      <div id="tab-attendance" class="profile-tab-content hidden">
+        <div style="display: flex; justify-content: space-around; background: var(--color-bg-base); padding: 15px; border-radius: var(--border-radius-md); margin-bottom: 20px; font-size: 0.9rem; border: 1px solid var(--color-border);">
+          <div style="text-align: center;">
+            <span style="display: block; color: var(--color-text-muted); font-size: 0.75rem;">Attendance Ratio</span>
+            <strong style="font-size: 1.4rem; color: var(--color-blue);">${student.attendancePct}%</strong>
+          </div>
+          <div style="text-align: center;">
+            <span style="display: block; color: var(--color-text-muted); font-size: 0.75rem;">Days Present</span>
+            <strong style="font-size: 1.4rem; color: var(--color-green);">${present + late} Days</strong>
+          </div>
+          <div style="text-align: center;">
+            <span style="display: block; color: var(--color-text-muted); font-size: 0.75rem;">Days Absent</span>
+            <strong style="font-size: 1.4rem; color: var(--color-danger);">${absent} Days</strong>
+          </div>
+        </div>
+        
+        <div style="font-size: 0.85rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 10px;">
+          <strong style="display:block; margin-bottom:8px; color:var(--color-blue);">Detailed Daily Logs:</strong>
+          ${Object.keys(state.attendance)
+            .filter(key => key.endsWith(attendanceKeyPrefix))
+            .map(key => {
+              const datePart = key.split('_')[0];
+              const status = state.attendance[key];
+              let label = "Present";
+              let sClass = "present";
+              if (status === "A") { label = "Absent"; sClass = "absent"; }
+              else if (status === "L") { label = "Late"; sClass = "late"; }
+              else if (status === "HD") { label = "Half Day"; sClass = "halfday"; }
+              return `
+                <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--color-border);">
+                  <span>${datePart}</span>
+                  <span class="attendance-status-badge ${sClass}">${label}</span>
+                </div>
+              `;
+            }).join('') || '<div style="color:var(--color-text-muted); text-align:center; padding:10px;">No logs recorded in system database.</div>'}
+        </div>
+      </div>
+
+      <!-- 4. Fees Tab -->
+      <div id="tab-fees" class="profile-tab-content hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; border-radius: var(--border-radius-md); background: ${student.pendingFees > 0 ? 'var(--color-saffron-light)' : 'var(--color-green-light)'}; border: 1px solid var(--color-border);">
+          <div>
+            <strong style="font-size: 0.95rem; color: ${student.pendingFees > 0 ? 'var(--color-saffron)' : 'var(--color-green)'};">
+              ${student.pendingFees > 0 ? 'Outstanding Fees Due' : 'Fees Account Fully Settled'}
+            </strong>
+            <div style="font-size: 0.8rem; color:var(--color-text-muted); margin-top: 2px;">
+              ${student.pendingFees > 0 ? 'Please complete payment via UPI checkout.' : 'No outstanding balances.'}
+            </div>
+          </div>
+          <strong style="font-size: 1.4rem; color: ${student.pendingFees > 0 ? 'var(--color-saffron)' : 'var(--color-green)'};">
+            ₹${student.pendingFees.toLocaleString('en-IN')}.00
+          </strong>
+        </div>
+
+        <div style="font-size: 0.85rem;">
+          <strong style="display:block; margin-bottom:8px; color:var(--color-blue);">Transaction Receipts Log:</strong>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--color-border); text-align: left;">
+                <th style="padding: 5px; color: var(--color-text-muted);">Invoice No</th>
+                <th style="padding: 5px; color: var(--color-text-muted);">Payment Date</th>
+                <th style="padding: 5px; text-align: right; color: var(--color-text-muted);">Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentPayments.map(p => `
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                  <td style="padding: 5px;"><code>${p.invoiceNo}</code></td>
+                  <td style="padding: 5px;">${p.paymentDate}</td>
+                  <td style="padding: 5px; text-align: right; font-weight:600; color:var(--color-green)">₹${p.amountPaid.toLocaleString('en-IN')}.00</td>
+                </tr>
+              `).join('') || '<tr><td colspan="3" style="text-align:center; padding:10px; color:var(--color-text-muted);">No payment history recorded.</td></tr>'}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   `;
+
+  // Bind profile tabs clicks
+  document.querySelectorAll(".profile-tab-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      document.querySelectorAll(".profile-tab-btn").forEach(t => t.classList.remove("active"));
+      e.currentTarget.classList.add("active");
+      
+      document.querySelectorAll(".profile-tab-content").forEach(c => c.classList.add("hidden"));
+      const tabName = e.currentTarget.getAttribute("data-tab");
+      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+    });
+  });
 }
 
 // Report Modal closures
@@ -2087,10 +2378,19 @@ function renderFeesView(parent) {
         ${dueCardsHtml}
       </div>
 
-      <!-- Scholarship & GST Calculator -->
-      <div class="panel-card">
-        <h3 class="panel-title">Merit Scholarship Schemes</h3>
-        <span class="panel-subtitle-hi">Exemptions Active</span>
+      <!-- Scholarship & GST Calculator & Analytics -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="panel-card">
+          <h3 class="panel-title">Fees Collection Analytics</h3>
+          <span class="panel-subtitle-hi">Paid vs Outstanding Breakdown</span>
+          <div class="canvas-chart-holder" style="height: 140px; margin-top: 15px;">
+            <canvas id="fees-analytics-chart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h3 class="panel-title">Merit Scholarship Schemes</h3>
+          <span class="panel-subtitle-hi">Exemptions Active</span>
         
         <div style="margin-top:15px; display:flex; flex-direction:column; gap:12px;">
           <div style="background-color:var(--color-green-light); padding:12px; border-radius:var(--border-radius-md); border-left:4px solid var(--color-green);">
@@ -2113,10 +2413,34 @@ function renderFeesView(parent) {
           <div class="student-field-row" style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Institution SAC Code:</span><span>999299 (Education Services)</span></div>
         </div>
       </div>
+    </div>
 
-      <!-- Payment History Ledger -->
+    <!-- Payment History Ledger -->
       <div class="panel-card" style="grid-column: span 2; margin-top: 20px;">
         <h3 class="panel-title">Payment History Ledger</h3>
+        
+        <div class="filters-row" style="margin-top: 15px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; padding: 12px; box-shadow: none; border-color: var(--color-border);">
+          <div class="filter-group">
+            <label for="fees-ledger-status-filter" style="font-size:0.75rem; font-weight:600;">Status</label>
+            <select id="fees-ledger-status-filter" style="padding: 6px; font-size:0.85rem; width:100%;">
+              <option value="">All Statuses</option>
+              <option value="SUCCESSFUL">SUCCESSFUL</option>
+              <option value="PENDING">PENDING</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="fees-ledger-type-filter" style="font-size:0.75rem; font-weight:600;">Fee Category</label>
+            <select id="fees-ledger-type-filter" style="padding: 6px; font-size:0.85rem; width:100%;">
+              <option value="">All Categories</option>
+              <option value="Tuition">Tuition Fees</option>
+            </select>
+          </div>
+          <div class="filter-group" style="grid-column: span 2;">
+            <label for="fees-ledger-search" style="font-size:0.75rem; font-weight:600;">Search Transactions</label>
+            <input type="text" id="fees-ledger-search" placeholder="Search by name, roll, or invoice..." style="padding: 6px; font-size:0.85rem; width:100%;">
+          </div>
+        </div>
+
         <div style="overflow-x: auto; margin-top: 15px;">
           <table class="attendance-table" style="width: 100%; border-collapse: collapse;">
             <thead>
@@ -2131,23 +2455,8 @@ function renderFeesView(parent) {
                 <th style="text-align: right; padding: 8px;">Action</th>
               </tr>
             </thead>
-            <tbody>
-              ${(state.paymentHistory || []).map((item, idx) => `
-                <tr style="border-bottom: 1px solid var(--color-border);">
-                  <td style="padding: 8px;"><strong>${item.invoiceNo}</strong></td>
-                  <td style="padding: 8px;">${item.studentName}</td>
-                  <td style="padding: 8px; text-align: center;">${item.rollNumber}</td>
-                  <td style="padding: 8px;">${item.feeType}</td>
-                  <td style="padding: 8px; text-align: right;"><strong>₹${item.amountPaid.toLocaleString('en-IN')}.00</strong></td>
-                  <td style="padding: 8px; text-align: center;">${item.paymentDate}</td>
-                  <td style="padding: 8px; text-align: center;"><span class="attendance-status-badge present" style="text-transform: uppercase;">${item.status}</span></td>
-                  <td style="text-align: right; padding: 8px;">
-                    <button class="btn btn-secondary print-hist-btn" data-index="${idx}" style="padding: 4px 8px; font-size: 0.75rem;">
-                      📄 Receipt
-                    </button>
-                  </td>
-                </tr>
-              `).join('')}
+            <tbody id="fees-ledger-tbody">
+              <!-- Loaded dynamically by drawFeesLedgerTable -->
             </tbody>
           </table>
         </div>
@@ -2166,15 +2475,48 @@ function renderFeesView(parent) {
     });
   });
 
-  // Bind receipt buttons triggers
-  document.querySelectorAll(".print-hist-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const idx = parseInt(e.currentTarget.getAttribute("data-index"));
-      const item = state.paymentHistory[idx];
-      if (item) {
-        openInvoiceReceipt(item);
+  // Bind Filter inputs
+  document.getElementById("fees-ledger-status-filter").addEventListener("change", drawFeesLedgerTable);
+  document.getElementById("fees-ledger-type-filter").addEventListener("change", drawFeesLedgerTable);
+  document.getElementById("fees-ledger-search").addEventListener("input", drawFeesLedgerTable);
+
+  // Initial draw
+  drawFeesLedgerTable();
+  drawFeesCharts();
+}
+
+function drawFeesCharts() {
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById('fees-analytics-chart')?.getContext('2d');
+  if (!ctx) return;
+  
+  const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
+  const paidFeesTotal = state.paymentHistory.reduce((acc, p) => acc + p.amountPaid, 0);
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Fees Collected', 'Pending Dues'],
+      datasets: [{
+        data: [paidFeesTotal || 150000, pendingFeesTotal || 45000],
+        backgroundColor: ['#22c55e', '#f97316'],
+        borderWidth: state.theme === 'dark' ? 2 : 1,
+        borderColor: state.theme === 'dark' ? '#0f172a' : '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 10 }
+          }
+        }
       }
-    });
+    }
   });
 }
 
@@ -2211,6 +2553,8 @@ document.getElementById("confirm-payment-btn").addEventListener("click", () => {
       const data = await res.json();
       payModal.classList.add("hidden");
       alertToast(`UPI payment approved! Printing tax invoice receipt...`);
+      addNotification(`Received fee payment: ₹${data.receipt.amountPaid.toLocaleString('en-IN')} for ${data.receipt.studentName}`);
+      addActivity(`Collected fees payment for ${data.receipt.studentName} (Invoice: ${data.receipt.invoiceNo}).`, "fees");
       await refreshStateData();
       
       // Open Receipt immediately
@@ -2489,7 +2833,8 @@ const testCases = [
   { id: "timetable", name: "Class Timetable & Co-Curricular slots", description: "Ensures sports, Yoga, and Carnatic music slots render." },
   { id: "fees", name: "Fees Management & UPI Receipt checkout", description: "Simulates paying bills via UPI and verifies tax receipt PDF popups." },
   { id: "search", name: "Dynamic Global Search Redirection", description: "Verifies searching automatically redirects to registry view." },
-  { id: "a11y", name: "A11y Controls & Font Scaling", description: "Toggles contrast theme variables and scales text size classes." }
+  { id: "a11y", name: "A11y Controls & Font Scaling", description: "Toggles contrast theme variables and scales text size classes." },
+  { id: "admin", name: "Admin Role Management & Dark Mode", description: "Verifies admin CRUD actions and theme switching." }
 ];
 
 function resetDiagnosticsRunner() {
@@ -2864,6 +3209,64 @@ async function runE2ETestsSuite() {
   } catch (err) {
     updateBadge("a11y", "failed", err.message);
   }
+  testProgressBar.style.width = "95%";
+
+  // Run Test 11: Admin Management & Dark Mode
+  try {
+    updateBadge("admin", "running");
+    await delay(600);
+    
+    // Test theme toggle to dark mode
+    const themeToggleBtn = document.getElementById("theme-toggle-btn");
+    if (!themeToggleBtn) throw new Error("Theme toggle button is missing.");
+    themeToggleBtn.click();
+    await delay(300);
+    if (document.documentElement.getAttribute("data-theme") !== "dark") throw new Error("Dark theme failed to activate.");
+    
+    // Navigate to Admin Management view
+    navigateTo("admin-mgmt");
+    await delay(500);
+    
+    // Check if CRUD elements render
+    const addAdminBtn = document.getElementById("add-admin-trigger");
+    if (!addAdminBtn) throw new Error("Create Admin button is missing in Admin view.");
+    
+    // Open create admin dialog modal
+    addAdminBtn.click();
+    await delay(400);
+    
+    const adminModal = document.getElementById("admin-modal");
+    if (adminModal.classList.contains("hidden")) throw new Error("Admin registration modal failed to open.");
+    
+    // Fill the fields
+    document.getElementById("admin-username").value = "test_admin";
+    document.getElementById("admin-password").value = "pass12345";
+    document.getElementById("admin-role").value = "Accountant";
+    
+    // Submit form
+    const adminForm = document.getElementById("admin-form");
+    adminForm.dispatchEvent(new Event("submit"));
+    await delay(600);
+    
+    if (!adminModal.classList.contains("hidden")) throw new Error("Admin modal did not close on submit.");
+    
+    // Check that it was added to dashboard activities or notification list
+    const newlyCreated = state.activities.find(act => act.text.includes("test_admin"));
+    if (!newlyCreated) throw new Error("New admin creation activity log was not recorded.");
+    
+    // Clean up: delete the test admin user
+    deleteAdminUser("test_admin");
+    await delay(500);
+    
+    // Revert theme toggle
+    themeToggleBtn.click();
+    await delay(200);
+    
+    updateBadge("admin", "passed");
+    passedCount++;
+  } catch (err) {
+    updateBadge("admin", "failed", err.message);
+  }
   testProgressBar.style.width = "100%";
 
   // Post-Execution Cleanup & Rollbacks
@@ -2893,5 +3296,417 @@ async function runE2ETestsSuite() {
     testSummaryText.innerText = `FAILURE: ${passedCount}/${testCases.length} passed, ${testCases.length - passedCount} failed. Check error logs.`;
     testSummaryText.style.color = "var(--color-danger)";
   }
+}
+
+// ==========================================================================
+// UPGRADED SCHOOL ERP DYNAMIC HELPERS & HANDLERS
+// ==========================================================================
+
+function drawDashboardCharts() {
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js is not loaded yet.");
+    return;
+  }
+  
+  const financeCtx = document.getElementById('finance-chart')?.getContext('2d');
+  const enrollmentCtx = document.getElementById('enrollment-chart')?.getContext('2d');
+  
+  if (!financeCtx || !enrollmentCtx) return;
+  
+  const pendingFeesTotal = state.students.reduce((acc, s) => acc + s.pendingFees, 0);
+  const paidFeesTotal = state.paymentHistory.reduce((acc, p) => acc + p.amountPaid, 0);
+  
+  new Chart(financeCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Fees Collected', 'Pending Dues'],
+      datasets: [{
+        data: [paidFeesTotal || 150000, pendingFeesTotal || 45000],
+        backgroundColor: ['#22c55e', '#f97316'],
+        borderWidth: state.theme === 'dark' ? 2 : 1,
+        borderColor: state.theme === 'dark' ? '#0f172a' : '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 10 }
+          }
+        }
+      }
+    }
+  });
+  
+  const class10 = state.students.filter(s => s.class === "10");
+  const class11 = state.students.filter(s => s.class === "11");
+  const class12 = state.students.filter(s => s.class === "12");
+  
+  const avg10 = class10.length ? Math.round(class10.reduce((acc, s) => acc + s.attendancePct, 0) / class10.length) : 85;
+  const avg11 = class11.length ? Math.round(class11.reduce((acc, s) => acc + s.attendancePct, 0) / class11.length) : 88;
+  const avg12 = class12.length ? Math.round(class12.reduce((acc, s) => acc + s.attendancePct, 0) / class12.length) : 92;
+  
+  new Chart(enrollmentCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Class 10', 'Class 11', 'Class 12'],
+      datasets: [{
+        label: 'Avg Attendance %',
+        data: [avg10, avg11, avg12],
+        backgroundColor: state.theme === 'dark' ? '#38bdf8' : '#002D62',
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          grid: { color: state.theme === 'dark' ? '#1e293b' : '#E2D7C3' },
+          ticks: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 9 }
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 9 }
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+function renderDashboardActivities() {
+  const feedContainer = document.getElementById("dashboard-activity-feed");
+  if (!feedContainer) return;
+  feedContainer.innerHTML = "";
+  
+  if (state.activities.length === 0) {
+    feedContainer.innerHTML = `<div style="text-align:center; padding:15px; color:var(--color-text-muted); font-size:0.8rem;">No recent activities.</div>`;
+    return;
+  }
+  
+  state.activities.forEach(act => {
+    const item = document.createElement("div");
+    item.className = "activity-item";
+    
+    let emoji = "⚡";
+    if (act.type === "auth") emoji = "🔑";
+    else if (act.type === "attendance") emoji = "📅";
+    else if (act.type === "fees") emoji = "₹";
+    else if (act.type === "students") emoji = "👨‍🎓";
+    else if (act.type === "ptm") emoji = "🤝";
+    
+    item.innerHTML = `
+      <div class="activity-icon-wrapper">${emoji}</div>
+      <div class="activity-details">
+        <span class="activity-title">${act.text}</span>
+        <span class="activity-time">🕒 ${act.time}</span>
+      </div>
+    `;
+    feedContainer.appendChild(item);
+  });
+}
+
+function drawAttendanceInsightsCharts() {
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById('class-attendance-chart')?.getContext('2d');
+  if (!ctx) return;
+  
+  const class10 = state.students.filter(s => s.class === "10");
+  const class11 = state.students.filter(s => s.class === "11");
+  const class12 = state.students.filter(s => s.class === "12");
+  
+  const avg10 = class10.length ? Math.round(class10.reduce((acc, s) => acc + s.attendancePct, 0) / class10.length) : 85;
+  const avg11 = class11.length ? Math.round(class11.reduce((acc, s) => acc + s.attendancePct, 0) / class11.length) : 88;
+  const avg12 = class12.length ? Math.round(class12.reduce((acc, s) => acc + s.attendancePct, 0) / class12.length) : 92;
+  
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Class 10', 'Class 11', 'Class 12'],
+      datasets: [{
+        data: [avg10, avg11, avg12],
+        backgroundColor: ['#f97316', '#22c55e', '#38bdf8'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          grid: { color: state.theme === 'dark' ? '#1e293b' : '#E2D7C3' },
+          ticks: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 8 }
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: state.theme === 'dark' ? '#94a3b8' : '#1A2530',
+            font: { family: 'Poppins', size: 9 }
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+function drawFeesLedgerTable() {
+  const tbody = document.querySelector("#fees-ledger-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  
+  const statusFilter = document.getElementById("fees-ledger-status-filter")?.value || "";
+  const typeFilter = document.getElementById("fees-ledger-type-filter")?.value || "";
+  const searchFilter = document.getElementById("fees-ledger-search")?.value.trim().toLowerCase() || "";
+  
+  const filtered = (state.paymentHistory || []).filter(item => {
+    if (statusFilter && item.status !== statusFilter) return false;
+    if (typeFilter && !item.feeType.toLowerCase().includes(typeFilter.toLowerCase())) return false;
+    if (searchFilter) {
+      const nameMatch = item.studentName.toLowerCase().includes(searchFilter);
+      const rollMatch = item.rollNumber.toString().includes(searchFilter);
+      const invMatch = item.invoiceNo.toLowerCase().includes(searchFilter);
+      return nameMatch || rollMatch || invMatch;
+    }
+    return true;
+  });
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--color-text-muted);">No transaction invoices found.</td></tr>`;
+    return;
+  }
+  
+  filtered.forEach((item, idx) => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--color-border)";
+    
+    tr.innerHTML = `
+      <td style="padding: 8px;"><strong>${item.invoiceNo}</strong></td>
+      <td style="padding: 8px;">${item.studentName}</td>
+      <td style="padding: 8px; text-align: center;">${item.rollNumber}</td>
+      <td style="padding: 8px;">${item.feeType}</td>
+      <td style="padding: 8px; text-align: right;"><strong>₹${item.amountPaid.toLocaleString('en-IN')}.00</strong></td>
+      <td style="padding: 8px; text-align: center;">${item.paymentDate}</td>
+      <td style="padding: 8px; text-align: center;"><span class="attendance-status-badge present" style="text-transform: uppercase;">${item.status}</span></td>
+      <td style="text-align: right; padding: 8px;">
+        <button class="btn btn-secondary print-hist-btn" data-index="${idx}" style="padding: 4px 8px; font-size: 0.75rem;">
+          📄 Receipt
+        </button>
+      </td>
+    `;
+    
+    tr.querySelector(".print-hist-btn").addEventListener("click", () => {
+      const originalIndex = state.paymentHistory.findIndex(p => p.invoiceNo === item.invoiceNo);
+      if (originalIndex !== -1) {
+        openInvoiceReceipt(state.paymentHistory[originalIndex]);
+      }
+    });
+    
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderAdminMgmtView(parent) {
+  const headerHtml = `
+    <div class="view-header">
+      <div class="view-title-area">
+        <span class="view-subtitle-devanagari">System Administration</span>
+        <h2>Admin Role Management</h2>
+      </div>
+      <div class="view-actions">
+        <button class="btn btn-saffron" id="add-admin-trigger">➕ Create Admin User</button>
+      </div>
+    </div>
+  `;
+  
+  parent.innerHTML = headerHtml + `<div class="admin-grid" id="admins-grid-container">Please wait, loading...</div>`;
+  
+  document.getElementById("add-admin-trigger").addEventListener("click", () => {
+    openAdminModal("create");
+  });
+  
+  await drawAdminsList();
+}
+
+async function drawAdminsList() {
+  const container = document.getElementById("admins-grid-container");
+  if (!container) return;
+  
+  try {
+    const res = await fetch('/api/admins');
+    if (!res.ok) throw new Error("Failed to load admin users");
+    const admins = await res.json();
+    
+    container.innerHTML = "";
+    
+    const activeUsername = localStorage.getItem("gurukul_admin_username") || "admin";
+    
+    admins.forEach(ad => {
+      const card = document.createElement("div");
+      card.className = "admin-card";
+      
+      const initials = ad.username.substring(0, 2).toUpperCase();
+      const canDelete = ad.username !== 'admin' && ad.username !== activeUsername;
+      
+      card.innerHTML = `
+        <div style="display:flex; gap:15px; align-items:center;">
+          <div class="admin-avatar">${initials}</div>
+          <div class="admin-info">
+            <span class="admin-username" style="font-weight:600; color:var(--color-blue);">${ad.username.charAt(0).toUpperCase() + ad.username.slice(1)}</span>
+            <span class="admin-role-badge" style="margin-top: 4px;">${ad.role || "Administrator"}</span>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn btn-secondary edit-admin-btn" data-username="${ad.username}" data-role="${ad.role || 'Administrator'}" style="padding: 5px 10px; font-size: 0.75rem;">Modify Role</button>
+          ${canDelete ? `<button class="btn delete-admin-btn" data-username="${ad.username}" style="padding: 5px 10px; font-size: 0.75rem; background:var(--color-danger); color:white; border:none;">Delete</button>` : ''}
+        </div>
+      `;
+      
+      card.querySelector(".edit-admin-btn").addEventListener("click", (e) => {
+        const u = e.currentTarget.getAttribute("data-username");
+        const r = e.currentTarget.getAttribute("data-role");
+        openAdminModal("edit", { username: u, role: r });
+      });
+      
+      if (canDelete) {
+        card.querySelector(".delete-admin-btn").addEventListener("click", (e) => {
+          const u = e.currentTarget.getAttribute("data-username");
+          if (confirm(`Are you sure you want to delete administrator: ${u}?`)) {
+            deleteAdminUser(u);
+          }
+        });
+      }
+      
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<div style="grid-column: span 3; text-align:center; padding:35px; color:var(--color-danger)">⚠️ Failed to load administrative directory from database.</div>`;
+  }
+}
+
+const adminModal = document.getElementById("admin-modal");
+const adminForm = document.getElementById("admin-form");
+
+function openAdminModal(mode, data = null) {
+  adminModal.classList.remove("hidden");
+  adminForm.reset();
+  
+  const title = document.getElementById("admin-modal-title");
+  const usernameInput = document.getElementById("admin-username");
+  const passwordInput = document.getElementById("admin-password");
+  const passwordGroup = document.getElementById("admin-password-group");
+  const roleSelect = document.getElementById("admin-role");
+  const modeInput = document.getElementById("admin-edit-mode");
+  
+  modeInput.value = mode;
+  
+  if (mode === "edit" && data) {
+    title.innerText = "Modify Admin Role";
+    usernameInput.value = data.username;
+    usernameInput.disabled = true;
+    passwordInput.required = false;
+    passwordInput.placeholder = "Leave blank to keep password";
+    roleSelect.value = data.role || "Administrator";
+  } else {
+    title.innerText = "Create Admin User";
+    usernameInput.value = "";
+    usernameInput.disabled = false;
+    passwordInput.required = true;
+    passwordInput.placeholder = "Enter password";
+    roleSelect.value = "Administrator";
+  }
+}
+
+document.getElementById("close-admin-modal")?.addEventListener("click", () => adminModal.classList.add("hidden"));
+document.getElementById("cancel-admin-btn")?.addEventListener("click", () => adminModal.classList.add("hidden"));
+
+adminForm?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  
+  const mode = document.getElementById("admin-edit-mode").value;
+  const username = document.getElementById("admin-username").value.trim();
+  const password = document.getElementById("admin-password").value;
+  const role = document.getElementById("admin-role").value;
+  
+  const payload = { role };
+  if (password) payload.password = password;
+  if (mode === "create") payload.username = username;
+  
+  const url = mode === "edit" ? `/api/admins/${username}` : '/api/admins';
+  const method = mode === "edit" ? 'PUT' : 'POST';
+  
+  fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(async res => {
+    if (res.ok) {
+      alertToast(mode === "edit" ? "Admin role updated successfully." : "New administrator created.");
+      addNotification(mode === "edit" ? `Modified administrative role for ${username}` : `Created administrator user: ${username}`);
+      addActivity(mode === "edit" ? `Updated admin role for ${username} to ${role}.` : `Created admin user: ${username} (${role}).`, "auth");
+      
+      if (username === localStorage.getItem("gurukul_admin_username") && mode === "edit") {
+        localStorage.setItem("gurukul_admin_role", role);
+        updateHeaderProfile();
+      }
+      
+      adminModal.classList.add("hidden");
+      if (state.currentView === "admin-mgmt") {
+        drawAdminsList();
+      }
+    } else {
+      const err = await res.json();
+      alertToast(`⚠️ Action failed: ${err.message || 'unknown error'}`);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alertToast("⚠️ Server connection error.");
+  });
+});
+
+function deleteAdminUser(username) {
+  fetch(`/api/admins/${username}`, { method: 'DELETE' })
+  .then(async res => {
+    if (res.ok) {
+      alertToast("Administrator deleted.");
+      addNotification(`Deleted admin user: ${username}`);
+      addActivity(`Deleted admin user: ${username}.`, "auth");
+      if (state.currentView === "admin-mgmt") {
+        drawAdminsList();
+      }
+    } else {
+      const err = await res.json();
+      alertToast(`⚠️ Delete failed: ${err.message}`);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alertToast("⚠️ Server connection error.");
+  });
 }
 
