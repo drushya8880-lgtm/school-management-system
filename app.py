@@ -3,8 +3,8 @@ import json
 import math
 import datetime
 from flask import Flask, request, jsonify
-import mysql.connector
-from mysql.connector import errorcode
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
@@ -18,19 +18,19 @@ db_port = os.getenv("DB_PORT")
 # If env variables exist → use them. Else → use localhost.
 if db_host or db_user or db_password or db_name or db_port:
     host = db_host if db_host is not None else "localhost"
-    user = db_user if db_user is not None else "root"
+    user = db_user if db_user is not None else "postgres"
     password = db_password if db_password is not None else ""
     database = db_name if db_name is not None else "gurukul_dashboard"
     try:
-        port = int(db_port) if db_port else 3306
+        port = int(db_port) if db_port else 5432
     except ValueError:
-        port = 3306
+        port = 5432
 else:
     host = "localhost"
-    user = "root"
+    user = "postgres"
     password = ""
     database = "gurukul_dashboard"
-    port = 3306
+    port = 5432
 
 # Holiday List (for seeder)
 holidays = [
@@ -46,32 +46,35 @@ def get_db_connection(include_db=True):
         'password': password,
     }
     if include_db:
-        config['database'] = database
-    return mysql.connector.connect(**config)
+        config['dbname'] = database
+    else:
+        config['dbname'] = 'postgres'
+    return psycopg2.connect(**config)
 
 def setup_database():
     # Attempt to connect to the database directly first
     conn = None
     try:
         conn = get_db_connection(include_db=True)
-    except mysql.connector.Error as err:
-        # If database doesn't exist, try to create it
-        if err.errno == errorcode.ER_BAD_DB_ERROR:
+    except psycopg2.Error as err:
+        # If database doesn't exist (SQLSTATE 3D000), try to create it
+        if getattr(err, 'pgcode', None) == '3D000':
             try:
                 print(f"Database {database} does not exist. Attempting to create it...")
                 conn_no_db = get_db_connection(include_db=False)
+                conn_no_db.autocommit = True
                 cursor = conn_no_db.cursor()
-                cursor.execute(f"CREATE DATABASE {database} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+                cursor.execute(f'CREATE DATABASE "{database}"')
                 cursor.close()
                 conn_no_db.close()
                 
                 # Connect to the newly created database
                 conn = get_db_connection(include_db=True)
-            except mysql.connector.Error as create_err:
+            except psycopg2.Error as create_err:
                 print(f"Failed to create database {database}: {create_err}")
                 return False
         else:
-            print(f"Failed to connect to MySQL: {err}")
+            print(f"Failed to connect to PostgreSQL: {err}")
             return False
 
     # Create tables and seed data
@@ -313,7 +316,7 @@ def setup_database():
         conn.close()
         print("Database setup successfully!")
         return True
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         print(f"Failed setting up database tables: {err}")
         return False
 
@@ -339,7 +342,7 @@ def api_login():
         
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM admin_users WHERE username = %s AND password = %s", (username, password))
         user = cursor.fetchone()
         cursor.close()
@@ -349,7 +352,7 @@ def api_login():
             return jsonify({'success': True, 'session': 'active'})
         else:
             return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'success': False, 'message': f'Database error: {err}'}), 500
 
 # 2. Student List & CRUD APIs
@@ -357,7 +360,7 @@ def api_login():
 def get_students():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM students ORDER BY roll_number")
         rows = cursor.fetchall()
         cursor.close()
@@ -385,7 +388,7 @@ def get_students():
             }
             students.append(student)
         return jsonify(students)
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 @app.route('/api/students', methods=['POST'])
@@ -429,7 +432,7 @@ def add_student():
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'student_id': student_id}), 201
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 @app.route('/api/students/<student_id>', methods=['PUT'])
@@ -469,7 +472,7 @@ def update_student(student_id):
         cursor.close()
         conn.close()
         return jsonify({'success': True})
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 @app.route('/api/students/<student_id>', methods=['DELETE'])
@@ -482,7 +485,7 @@ def delete_student(student_id):
         cursor.close()
         conn.close()
         return jsonify({'success': True})
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 # 3. Attendance APIs
@@ -490,7 +493,7 @@ def delete_student(student_id):
 def get_attendance():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM attendance")
         rows = cursor.fetchall()
         cursor.close()
@@ -504,7 +507,7 @@ def get_attendance():
             attendance_map[key] = r['status']
             
         return jsonify(attendance_map)
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 @app.route('/api/attendance', methods=['POST'])
@@ -526,8 +529,9 @@ def save_attendance():
                 cursor.execute("""
                     INSERT INTO attendance (attendance_date, student_id, status)
                     VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE status = %s
-                """, (date_str, student_id, status, status))
+                    ON CONFLICT (attendance_date, student_id)
+                    DO UPDATE SET status = EXCLUDED.status
+                """, (date_str, student_id, status))
         conn.commit()
 
         # Recalculate cumulative attendance percentages for all students
@@ -555,7 +559,7 @@ def save_attendance():
         cursor.close()
         conn.close()
         return jsonify({'success': True})
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 # 4. Fees APIs
@@ -563,7 +567,7 @@ def save_attendance():
 def get_fees_history():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM payment_history ORDER BY payment_date DESC")
         rows = cursor.fetchall()
         cursor.close()
@@ -583,7 +587,7 @@ def get_fees_history():
             }
             history.append(item)
         return jsonify(history)
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 @app.route('/api/fees/pay', methods=['POST'])
@@ -596,7 +600,7 @@ def pay_fees():
 
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         
         # Fetch student details
         cursor.execute("SELECT * FROM students WHERE id = %s", (student_id,))
@@ -649,7 +653,7 @@ def pay_fees():
         }
         
         return jsonify({'success': True, 'receipt': history_item})
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
 if __name__ == '__main__':
