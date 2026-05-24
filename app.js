@@ -1759,6 +1759,7 @@ function renderGradesView(parent) {
   if (state.gradesSectionFilter === undefined) state.gradesSectionFilter = "";
   if (state.gradesSearchQuery === undefined) state.gradesSearchQuery = "";
   if (state.gradesSortBy === undefined) state.gradesSortBy = "";
+  if (state.gradesPage === undefined) state.gradesPage = 1;
 
   const headerHtml = `
     <div class="view-header">
@@ -1773,7 +1774,7 @@ function renderGradesView(parent) {
     <div class="grades-layout">
       
       <!-- Interactive Grade Table -->
-      <div class="panel-card">
+      <div class="panel-card grades-panel">
         <div class="panel-title-row" style="margin-bottom: 10px;">
           <div>
             <h3 class="panel-title">Student Merit List & Percentiles</h3>
@@ -1782,8 +1783,8 @@ function renderGradesView(parent) {
           <span id="grades-count" style="font-size:0.85rem; font-weight:600; color:var(--color-saffron);">Showing 0 students</span>
         </div>
 
-        <!-- Filters & Sorting row -->
-        <div class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; padding: 12px; margin-bottom: 15px; box-shadow: none; border: 1px solid var(--color-border); border-radius: var(--border-radius-md);">
+        <!-- Filters & Sorting row (Sticky) -->
+        <div class="filters-row grades-filters-sticky" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; border-radius: var(--border-radius-md);">
           <div class="filter-group" style="flex: 1; min-width: 100px;">
             <label for="grades-class-filter" style="font-size: 0.75rem; font-weight: 600;">Class</label>
             <select id="grades-class-filter" style="padding: 6px; font-size: 0.8rem; width: 100%;">
@@ -1804,13 +1805,17 @@ function renderGradesView(parent) {
           </div>
           <div class="filter-group" style="flex: 2; min-width: 150px;">
             <label for="grades-search-filter" style="font-size: 0.75rem; font-weight: 600;">Search Student</label>
-            <input type="text" id="grades-search-filter" value="${state.gradesSearchQuery}" placeholder="Name or Roll..." style="padding: 6px; font-size: 0.8rem; width: 100%;">
+            <div class="search-input-wrapper">
+              <input type="text" id="grades-search-filter" value="${state.gradesSearchQuery}" placeholder="Name or Roll..." style="padding: 6px; font-size: 0.8rem; width: 100%; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-bg-base); color: var(--color-text-main);">
+              <span id="grades-search-clear" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--color-text-muted); font-size: 1rem; font-weight: bold; display: ${state.gradesSearchQuery ? 'block' : 'none'};">&times;</span>
+            </div>
           </div>
           <div class="filter-group" style="flex: 1.5; min-width: 120px;">
             <label for="grades-sort-filter" style="font-size: 0.75rem; font-weight: 600;">Sort By</label>
             <select id="grades-sort-filter" style="padding: 6px; font-size: 0.8rem; width: 100%;">
               <option value="" ${state.gradesSortBy === '' ? 'selected' : ''}>Default</option>
-              <option value="cgpa" ${state.gradesSortBy === 'cgpa' ? 'selected' : ''}>CGPA (High-Low)</option>
+              <option value="cgpa-desc" ${state.gradesSortBy === 'cgpa-desc' ? 'selected' : ''}>CGPA High→Low</option>
+              <option value="cgpa-asc" ${state.gradesSortBy === 'cgpa-asc' ? 'selected' : ''}>CGPA Low→High</option>
               <option value="attendance" ${state.gradesSortBy === 'attendance' ? 'selected' : ''}>Attendance (High-Low)</option>
               <option value="name" ${state.gradesSortBy === 'name' ? 'selected' : ''}>Name (A-Z)</option>
             </select>
@@ -1836,6 +1841,7 @@ function renderGradesView(parent) {
             </tbody>
           </table>
         </div>
+        <div id="grades-pagination"></div>
       </div>
 
       <!-- Graph comparison widget -->
@@ -1906,24 +1912,42 @@ function renderGradesView(parent) {
   const searchFilter = document.getElementById("grades-search-filter");
   const sortFilter = document.getElementById("grades-sort-filter");
   const resetBtn = document.getElementById("grades-reset-btn");
+  const clearBtn = document.getElementById("grades-search-clear");
 
   classFilter.addEventListener("change", (e) => {
     state.gradesClassFilter = e.target.value;
+    state.gradesPage = 1;
     drawGradesTable();
   });
 
   sectionFilter.addEventListener("change", (e) => {
     state.gradesSectionFilter = e.target.value;
+    state.gradesPage = 1;
     drawGradesTable();
   });
 
   searchFilter.addEventListener("input", (e) => {
     state.gradesSearchQuery = e.target.value.trim().toLowerCase();
+    state.gradesPage = 1;
+    if (clearBtn) {
+      clearBtn.style.display = e.target.value ? "block" : "none";
+    }
     drawGradesTable();
   });
 
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      state.gradesSearchQuery = "";
+      state.gradesPage = 1;
+      searchFilter.value = "";
+      clearBtn.style.display = "none";
+      drawGradesTable();
+    });
+  }
+
   sortFilter.addEventListener("change", (e) => {
     state.gradesSortBy = e.target.value;
+    state.gradesPage = 1;
     drawGradesTable();
   });
 
@@ -1932,11 +1956,13 @@ function renderGradesView(parent) {
     state.gradesSectionFilter = "";
     state.gradesSearchQuery = "";
     state.gradesSortBy = "";
+    state.gradesPage = 1;
     
     classFilter.value = "";
     sectionFilter.value = "";
     searchFilter.value = "";
     sortFilter.value = "";
+    if (clearBtn) clearBtn.style.display = "none";
     
     drawGradesTable();
   });
@@ -1948,8 +1974,10 @@ function renderGradesView(parent) {
 function drawGradesTable() {
   const tbody = document.getElementById("grades-tbody");
   const countLabel = document.getElementById("grades-count");
+  const paginationContainer = document.getElementById("grades-pagination");
   if (!tbody) return;
   tbody.innerHTML = "";
+  if (paginationContainer) paginationContainer.innerHTML = "";
 
   const classFilter = state.gradesClassFilter || "";
   const sectionFilter = state.gradesSectionFilter || "";
@@ -1968,13 +1996,25 @@ function drawGradesTable() {
     return true;
   });
 
+  // Helper to extract CGPA value reliably (e.g. from "A1 (9.6)" -> 9.6)
+  const getCgpaValue = (cgpaStr) => {
+    if (!cgpaStr) return 0;
+    const parenMatch = cgpaStr.match(/\((\d+(?:\.\d+)?)\)/);
+    if (parenMatch) {
+      return parseFloat(parenMatch[1]);
+    }
+    const allMatches = cgpaStr.match(/\d+(?:\.\d+)?/g);
+    if (allMatches && allMatches.length > 0) {
+      return parseFloat(allMatches[allMatches.length - 1]);
+    }
+    return 0;
+  };
+
   // Sort students
-  if (sortBy === "cgpa") {
-    filtered.sort((a, b) => {
-      const valA = parseFloat(a.cgpa.match(/\d+(\.\d+)?/)?.[0] || 0);
-      const valB = parseFloat(b.cgpa.match(/\d+(\.\d+)?/)?.[0] || 0);
-      return valB - valA;
-    });
+  if (sortBy === "cgpa-desc") {
+    filtered.sort((a, b) => getCgpaValue(b.cgpa) - getCgpaValue(a.cgpa));
+  } else if (sortBy === "cgpa-asc") {
+    filtered.sort((a, b) => getCgpaValue(a.cgpa) - getCgpaValue(b.cgpa));
   } else if (sortBy === "attendance") {
     filtered.sort((a, b) => b.attendancePct - a.attendancePct);
   } else if (sortBy === "name") {
@@ -1985,35 +2025,107 @@ function drawGradesTable() {
     });
   }
 
+  // Pre-calculate ranks of all students in state.students by CGPA
+  const rankedStudents = [...state.students]
+    .map(s => ({ id: s.id, cgpaVal: getCgpaValue(s.cgpa) }))
+    .sort((a, b) => b.cgpaVal - a.cgpaVal);
+
   // Update count
   if (countLabel) {
     countLabel.innerText = `Showing ${filtered.length} student${filtered.length === 1 ? '' : 's'}`;
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--color-text-muted);">No student records found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px 20px; color:var(--color-text-muted); font-size:0.85rem;"><div style="font-size:2rem; margin-bottom:10px;">🔍</div>No students found</td></tr>`;
     return;
   }
 
-  filtered.forEach(s => {
+  // Pagination details
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  if (state.gradesPage === undefined) state.gradesPage = 1;
+  if (state.gradesPage > totalPages) state.gradesPage = Math.max(1, totalPages);
+  
+  const startIndex = (state.gradesPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filtered.slice(startIndex, endIndex);
+
+  paginatedItems.forEach(s => {
+    // Determine dynamic rank badge (overall)
+    const rankIndex = rankedStudents.findIndex(r => r.id === s.id);
+    let badgeHtml = "";
+    if (rankIndex === 0) {
+      badgeHtml = `<span class="rank-badge gold" title="1st Rank (Gold Medalist)">🥇</span>`;
+    } else if (rankIndex === 1) {
+      badgeHtml = `<span class="rank-badge silver" title="2nd Rank (Silver Medalist)">🥈</span>`;
+    } else if (rankIndex === 2) {
+      badgeHtml = `<span class="rank-badge bronze" title="3rd Rank (Bronze Medalist)">🥉</span>`;
+    }
+
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid var(--color-border)";
     tr.innerHTML = `
-      <td style="padding: 8px;">${s.rollNumber}</td>
-      <td style="padding: 8px;"><strong>${s.firstName} ${s.lastName}</strong></td>
-      <td style="padding: 8px; text-align: center;">Class ${s.class}-${s.section}</td>
-      <td style="padding: 8px; text-align: center;"><span style="font-weight:700; color:var(--color-green)">${s.cgpa}</span></td>
-      <td style="padding: 8px; text-align: right;">
-        <button class="btn btn-secondary gen-report-btn" data-id="${s.id}" style="padding:6px 12px; font-size:0.75rem">
-          Generate Report Card
+      <td style="padding: 6px 12px;">${s.rollNumber}</td>
+      <td style="padding: 6px 12px;">
+        <span style="display: inline-flex; align-items: center;">
+          ${badgeHtml}
+          <strong>${s.firstName} ${s.lastName}</strong>
+        </span>
+      </td>
+      <td style="padding: 6px 12px; text-align: center;">Class ${s.class}-${s.section}</td>
+      <td style="padding: 6px 12px; text-align: center;"><span style="font-weight:700; color:var(--color-green)">${s.cgpa}</span></td>
+      <td style="padding: 6px 12px; text-align: right;">
+        <button class="btn btn-secondary gen-report-btn" data-id="${s.id}" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">
+          📄 Report
         </button>
       </td>
     `;
-    tr.querySelector(".gen-report-btn").addEventListener("click", () => {
+    tr.querySelector(".gen-report-btn").addEventListener("click", (e) => {
+      e.stopPropagation(); // prevent row click triggers
+      openReportCard(s.id);
+    });
+    tr.addEventListener("click", () => {
       openReportCard(s.id);
     });
     tbody.appendChild(tr);
   });
+
+  // Render pagination controls if there is pagination container
+  if (paginationContainer) {
+    paginationContainer.innerHTML = `
+      <div class="pagination-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--color-border);">
+        <span style="font-size: 0.75rem; color: var(--color-text-muted);">
+          Showing ${startIndex + 1}-${Math.min(endIndex, filtered.length)} of ${filtered.length} students
+        </span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="grades-prev-page" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 500;" ${state.gradesPage === 1 ? 'disabled' : ''}>Previous</button>
+          <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-main);">Page ${state.gradesPage} of ${totalPages || 1}</span>
+          <button id="grades-next-page" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 500;" ${state.gradesPage >= totalPages ? 'disabled' : ''}>Next</button>
+        </div>
+      </div>
+    `;
+
+    // Bind Pagination Buttons
+    const prevPageBtn = document.getElementById("grades-prev-page");
+    const nextPageBtn = document.getElementById("grades-next-page");
+
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener("click", () => {
+        if (state.gradesPage > 1) {
+          state.gradesPage--;
+          drawGradesTable();
+        }
+      });
+    }
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener("click", () => {
+        if (state.gradesPage < totalPages) {
+          state.gradesPage++;
+          drawGradesTable();
+        }
+      });
+    }
+  }
 }
 
 // Printable Report Card Builder Modal

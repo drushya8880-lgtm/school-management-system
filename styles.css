@@ -3073,3 +3073,72 @@ input:checked+.slider:before {
   background-color: #2d1818;
   color: #ff8888;
 }
+
+/* ==========================================================================
+   Grades & Reports Polished View Styles
+   ========================================================================== */
+
+.grades-panel {
+  overflow: visible !important;
+}
+
+.grades-filters-sticky {
+  position: sticky;
+  top: 70px; /* Aligns right below .app-header sticky top */
+  z-index: 95;
+  background-color: var(--color-bg-card) !important;
+  box-shadow: var(--shadow-sm);
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--color-saffron) !important;
+  transition: top var(--transition-normal);
+}
+
+.grades-panel .attendance-table tbody tr {
+  transition: background-color var(--transition-fast, 0.2s);
+}
+
+.grades-panel .attendance-table tbody tr:nth-child(even) {
+  background-color: var(--color-bg-base);
+}
+
+.grades-panel .attendance-table tbody tr:hover {
+  background-color: rgba(255, 153, 51, 0.08) !important;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .grades-panel .attendance-table tbody tr:hover {
+  background-color: rgba(255, 153, 51, 0.15) !important;
+}
+
+.rank-badge {
+  font-size: 1.15rem;
+  margin-right: 6px;
+  vertical-align: middle;
+  display: inline-block;
+  animation: badge-float 2s ease-in-out infinite alternate;
+}
+
+@keyframes badge-float {
+  0% { transform: translateY(0px) scale(1); }
+  100% { transform: translateY(-3px) scale(1.1); }
+}
+
+/* Compact layout style changes for Grades view */
+.grades-layout .panel-card {
+  padding: 16px 20px !important;
+}
+
+.grades-panel .attendance-table th,
+.grades-panel .attendance-table td {
+  padding: 8px 12px !important;
+}
+
+/* Search input relative container layout */
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-input-wrapper input {
+  padding-right: 30px !important;
+}
