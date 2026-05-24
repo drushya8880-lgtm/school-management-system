@@ -156,9 +156,9 @@
           <span class="nav-icon">₹</span>
           <span class="nav-label">Fees Management</span>
         </a>
-        <a href="#diagnostics" class="nav-item diagnostics-nav" data-view="diagnostics" id="nav-diagnostics">
-          <span class="nav-icon">🧪</span>
-          <span class="nav-label">Run E2E Diagnostics</span>
+        <a href="#teachers" class="nav-item" data-view="teachers" id="nav-teachers">
+          <span class="nav-icon">👩‍🏫</span>
+          <span class="nav-label">Teachers</span>
         </a>
         <a href="#logout" class="nav-item" data-view="logout" id="nav-logout"
           style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 10px;">
@@ -482,59 +482,156 @@
     </div>
   </div>
 
-  <!-- E2E Test Runner Modal -->
-  <div id="diagnostics-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="diagnostics-title">
-    <div class="modal-content diagnostics-modal-content"
-      style="max-width: 650px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--color-saffron); border-radius: var(--border-radius-md); box-shadow: var(--shadow-lg);">
-      <div class="modal-header"
-        style="border-bottom: 2px solid var(--color-blue); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="diagnostics-title"
-          style="color: var(--color-blue); margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
-          <span>🧪 Gurukul E2E Diagnostics Test Runner</span>
-        </h2>
-        <button class="close-modal-btn" id="close-diagnostics-modal"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted);">&times;</button>
+  <!-- Teacher CRUD Add/Edit Dialog Modal -->
+  <div id="teacher-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="t-modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="t-modal-title">Enroll New Teacher</h2>
+        <button class="close-modal-btn" id="close-teacher-modal">&times;</button>
       </div>
-      <div class="diagnostics-body" style="padding: 20px 0;">
-        <p style="font-size: 0.9rem; margin-bottom: 15px; color: var(--color-text-main); line-height: 1.5;">
-          This test runner automates simulated user interactions to verify sidebar navigation, page loading states,
-          student registration form validation, attendance actions, grades comparisons, timetable views, fees UPI
-          payment checkout, dynamic search, accessibility modes, and browser local storage cache.
-        </p>
-
-        <!-- Controls -->
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <button id="start-tests-btn" class="btn btn-primary"
-            style="background: var(--color-saffron); border-color: var(--color-saffron); padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);">▶
-            Start E2E Suite</button>
-          <button id="reset-tests-btn" class="btn btn-secondary"
-            style="padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);"
-            disabled>Reset</button>
+      <form id="teacher-form" class="modal-form">
+        <input type="hidden" id="teacher-db-id">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="teacher-first-name" class="required">First Name</label>
+            <input type="text" id="teacher-first-name" required placeholder="e.g. Rajesh">
+          </div>
+          <div class="form-group">
+            <label for="teacher-last-name" class="required">Last Name</label>
+            <input type="text" id="teacher-last-name" required placeholder="e.g. Sharma">
+          </div>
+          <div class="form-group">
+            <label for="teacher-id-val" class="required">Teacher ID</label>
+            <input type="text" id="teacher-id-val" required placeholder="e.g. TCH101">
+          </div>
+          <div class="form-group">
+            <label for="teacher-subject" class="required">Subject</label>
+            <select id="teacher-subject" required>
+              <option value="">Select Subject</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Science">Science</option>
+              <option value="Sanskrit">Sanskrit</option>
+              <option value="Social Studies">Social Studies</option>
+              <option value="English">English</option>
+              <option value="Arts">Arts</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="teacher-class" class="required">Assigned Class</label>
+            <select id="teacher-class" required>
+              <option value="">Select Class</option>
+              <option value="10">Class 10</option>
+              <option value="11">Class 11</option>
+              <option value="12">Class 12</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="teacher-section" class="required">Assigned Section</label>
+            <select id="teacher-section" required>
+              <option value="">Select Section</option>
+              <option value="A">Section A</option>
+              <option value="B">Section B</option>
+              <option value="C">Section C</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="teacher-qualification" class="required">Qualification</label>
+            <input type="text" id="teacher-qualification" required placeholder="e.g. M.Sc, B.Ed">
+          </div>
+          <div class="form-group">
+            <label for="teacher-experience" class="required">Experience (Years)</label>
+            <input type="number" id="teacher-experience" required min="0" placeholder="e.g. 8">
+          </div>
+          <div class="form-group">
+            <label for="teacher-phone" class="required">Contact Number</label>
+            <input type="tel" id="teacher-phone" pattern="^[6-9]\d{9}$" placeholder="9876543210" required>
+          </div>
+          <div class="form-group">
+            <label for="teacher-status" class="required">Availability Status</label>
+            <select id="teacher-status" required>
+              <option value="Available">Available</option>
+              <option value="Busy">Busy</option>
+            </select>
+          </div>
         </div>
-
-        <!-- Progress Bar -->
-        <div id="test-progress-bar-container"
-          style="height: 8px; background: var(--color-blue-light); border-radius: 4px; overflow: hidden; margin-bottom: 20px; display: none;">
-          <div id="test-progress-bar"
-            style="width: 0%; height: 100%; background: var(--color-green); transition: width 0.3s ease;"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-teacher-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-teacher-btn">Save Teacher</button>
         </div>
-
-        <!-- Test Case List -->
-        <div id="test-cases-list"
-          style="display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; padding-right: 5px;">
-          <!-- Dynamically populated test cases -->
-        </div>
-      </div>
-      <div class="modal-footer"
-        style="border-top: 1px solid var(--color-border); padding-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-        <span id="test-summary-text" style="font-weight: 600; font-size: 0.9rem; color: var(--color-text-muted);">Ready
-          to run E2E diagnostic checks.</span>
-        <button type="button" class="btn btn-secondary" id="close-diagnostics-btn"
-          style="padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: var(--border-radius-sm);">Close</button>
-      </div>
+      </form>
     </div>
   </div>
 
+  <!-- Detailed Teacher Profile & Schedule Modal -->
+  <div id="teacher-profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+    <div class="modal-content" style="max-width: 750px;">
+      <div class="modal-header">
+        <h2 id="profile-modal-title">Teacher Profile Detail</h2>
+        <button class="close-modal-btn" id="close-profile-modal">&times;</button>
+      </div>
+      <div class="teacher-profile-layout" style="display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 15px 0;">
+        <!-- Profile info column -->
+        <div class="profile-info-sidebar" style="display:flex; flex-direction:column; align-items:center; text-align:center; border-right: 1px solid var(--color-border); padding-right:20px;">
+          <div id="tp-avatar" style="width: 100px; height: 100px; border-radius:50%; background: var(--color-saffron-light); color: var(--color-saffron); font-size:2.2rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:2px solid var(--color-saffron); box-shadow:0 4px 10px rgba(0,0,0,0.05);">T</div>
+          <h3 id="tp-name" style="margin-bottom:5px; font-size:1.15rem; color:var(--color-blue);">Dr. Rajesh Kumar</h3>
+          <span id="tp-id" style="font-size:0.75rem; background: var(--color-saffron-light); color: var(--color-saffron); padding:2px 8px; border-radius:10px; font-weight:600; margin-bottom:12px;">TCH001</span>
+          
+          <div style="width:100%; text-align:left; font-size:0.85rem; display:flex; flex-direction:column; gap:8px; margin-top:10px; border-top: 1px solid var(--color-border); padding-top:12px;">
+            <div><strong>Qualification:</strong> <span id="tp-qualification">M.Sc., Ph.D.</span></div>
+            <div><strong>Experience:</strong> <span id="tp-experience">12 Years</span></div>
+            <div><strong>Subject:</strong> <span id="tp-subject">Mathematics</span></div>
+            <div><strong>Assigned Class:</strong> <span id="tp-class-section">Class 12 - A</span></div>
+            <div><strong>Contact:</strong> <span id="tp-contact">+91 9876543210</span></div>
+            <div><strong>Status:</strong> <span id="tp-status" class="attendance-status-badge present">Available</span></div>
+          </div>
+        </div>
+        
+        <!-- Schedule Column & Assignment UI -->
+        <div class="profile-schedule-main" style="display:flex; flex-direction:column; gap:16px;">
+          <h4 style="color:var(--color-blue); font-size:1rem; border-bottom: 2px solid var(--color-saffron-light); padding-bottom:6px; margin:0;">Weekly Lecture Schedule</h4>
+          
+          <div style="overflow-x: auto;">
+            <table class="schedule-table" style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:center;">
+              <thead>
+                <tr style="background:var(--color-blue-light); color:var(--color-blue); border-bottom:2px solid var(--color-border);">
+                  <th style="padding:6px;">Day</th>
+                  <th style="padding:6px;">Period 1</th>
+                  <th style="padding:6px;">Period 2</th>
+                  <th style="padding:6px;">Period 3</th>
+                  <th style="padding:6px;">Period 4</th>
+                  <th style="padding:6px;">Period 5</th>
+                </tr>
+              </thead>
+              <tbody id="tp-schedule-tbody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Assign Teacher Form UI -->
+          <div class="assign-teacher-section" style="margin-top: 15px; background: rgba(255, 153, 51, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(255, 153, 51, 0.15);">
+            <h4 style="color:var(--color-saffron); font-size:0.95rem; margin-top:0; margin-bottom:10px;">Assign to Class & Section</h4>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <select id="tp-assign-class" style="flex:1; min-width:100px;">
+                <option value="10">Class 10</option>
+                <option value="11">Class 11</option>
+                <option value="12">Class 12</option>
+              </select>
+              <select id="tp-assign-section" style="flex:1; min-width:100px;">
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+              </select>
+              <button class="btn btn-saffron" id="tp-assign-btn" style="padding: 6px 12px; font-size:0.85rem;">Update Assignment</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--color-border); padding-top:15px; margin-top:10px;">
+        <button type="button" class="btn btn-secondary" id="close-profile-btn" style="width:100px;">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Application Logic JavaScript -->
   <script src="app.js"></script>

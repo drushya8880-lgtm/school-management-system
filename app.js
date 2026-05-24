@@ -259,6 +259,90 @@ state.students = [];
 state.attendance = {};
 state.paymentHistory = [];
 
+// Initialize state.teachers with localStorage syncing or seeded default values
+state.teachers = JSON.parse(localStorage.getItem("gurukul_teachers")) || [
+  {
+    id: "TCH101",
+    firstName: "Rajesh",
+    lastName: "Kumar",
+    subject: "Mathematics",
+    class: "12",
+    section: "A",
+    experience: 12,
+    phone: "9876543210",
+    status: "Available",
+    qualification: "M.Sc., Ph.D. in Math",
+    schedule: {
+      "Monday": ["Math", "Math", "Free", "Math", "Free"],
+      "Tuesday": ["Math", "Free", "Math", "Math", "Free"],
+      "Wednesday": ["Free", "Math", "Math", "Free", "Math"],
+      "Thursday": ["Math", "Math", "Free", "Math", "Free"],
+      "Friday": ["Free", "Free", "Math", "Math", "Math"]
+    }
+  },
+  {
+    id: "TCH102",
+    firstName: "Sunita",
+    lastName: "Desai",
+    subject: "Sanskrit",
+    class: "10",
+    section: "B",
+    experience: 8,
+    phone: "9820012345",
+    status: "Busy",
+    qualification: "M.A. in Sanskrit, B.Ed",
+    schedule: {
+      "Monday": ["Sanskrit", "Free", "Sanskrit", "Free", "Sanskrit"],
+      "Tuesday": ["Free", "Sanskrit", "Free", "Sanskrit", "Free"],
+      "Wednesday": ["Sanskrit", "Sanskrit", "Free", "Free", "Sanskrit"],
+      "Thursday": ["Free", "Free", "Sanskrit", "Sanskrit", "Free"],
+      "Friday": ["Sanskrit", "Free", "Free", "Sanskrit", "Sanskrit"]
+    }
+  },
+  {
+    id: "TCH103",
+    firstName: "Amit",
+    lastName: "Trivedi",
+    subject: "Science",
+    class: "11",
+    section: "A",
+    experience: 10,
+    phone: "9912098765",
+    status: "Available",
+    qualification: "M.Sc. in Physics, B.Ed",
+    schedule: {
+      "Monday": ["Science", "Science", "Free", "Free", "Science"],
+      "Tuesday": ["Free", "Science", "Science", "Free", "Free"],
+      "Wednesday": ["Science", "Free", "Free", "Science", "Science"],
+      "Thursday": ["Science", "Science", "Free", "Science", "Free"],
+      "Friday": ["Free", "Free", "Science", "Science", "Science"]
+    }
+  },
+  {
+    id: "TCH104",
+    firstName: "Preeti",
+    lastName: "Sharma",
+    subject: "English",
+    class: "12",
+    section: "C",
+    experience: 6,
+    phone: "9884012345",
+    status: "Available",
+    qualification: "M.A. in English Lit",
+    schedule: {
+      "Monday": ["English", "Free", "English", "English", "Free"],
+      "Tuesday": ["English", "English", "Free", "Free", "English"],
+      "Wednesday": ["Free", "English", "English", "Free", "Free"],
+      "Thursday": ["English", "Free", "Free", "English", "English"],
+      "Friday": ["English", "English", "Free", "English", "Free"]
+    }
+  }
+];
+
+function saveTeachersToLocalStorage() {
+  localStorage.setItem("gurukul_teachers", JSON.stringify(state.teachers));
+}
+
 async function refreshStateData() {
   try {
     const resStudents = await fetch('/api/students');
@@ -503,10 +587,7 @@ function setupGlobalEvents() {
     item.addEventListener("click", (e) => {
       e.preventDefault();
       const targetView = item.getAttribute("data-view");
-      if (targetView === "diagnostics") {
-        openDiagnosticsModal();
-        return;
-      }
+
       if (targetView === "logout") {
         handleLogout();
         return;
@@ -694,6 +775,9 @@ function renderCurrentView() {
     case "fees":
       renderFeesView(container);
       break;
+    case "teachers":
+      renderTeachersView(container);
+      break;
     default:
       container.innerHTML = "<h2>View Not Found</h2>";
   }
@@ -742,10 +826,7 @@ function renderDashboardView(parent) {
           <div class="quick-action-icon">₹</div>
           <span style="margin-top: 6px;">Collect Fees</span>
         </div>
-        <div class="quick-action-btn" id="qa-run-diagnostics">
-          <div class="quick-action-icon">🧪</div>
-          <span style="margin-top: 6px;">Run Diagnostics</span>
-        </div>
+
       </div>
     </div>
   `;
@@ -957,9 +1038,7 @@ function renderDashboardView(parent) {
   document.getElementById("qa-collect-fees")?.addEventListener("click", () => {
     navigateTo("fees");
   });
-  document.getElementById("qa-run-diagnostics")?.addEventListener("click", () => {
-    openDiagnosticsModal();
-  });
+
 
   // Bind weather dropdown handler
   const weatherSelect = document.getElementById("weather-city-selector");
@@ -3730,439 +3809,6 @@ function alertToast(msg) {
 }
 
 // ==========================================================================
-// E2E DIAGNOSTICS TEST RUNNER ENGINE
-// ==========================================================================
-const diagModal = document.getElementById("diagnostics-modal");
-const startBtn = document.getElementById("start-tests-btn");
-const resetBtn = document.getElementById("reset-tests-btn");
-const closeDiagBtn = document.getElementById("close-diagnostics-btn");
-const closeDiagModal = document.getElementById("close-diagnostics-modal");
-const testProgressBarContainer = document.getElementById("test-progress-bar-container");
-const testProgressBar = document.getElementById("test-progress-bar");
-const testCasesList = document.getElementById("test-cases-list");
-const testSummaryText = document.getElementById("test-summary-text");
-
-function openDiagnosticsModal() {
-  diagModal.classList.remove("hidden");
-  resetDiagnosticsRunner();
-}
-
-closeDiagBtn.addEventListener("click", () => diagModal.classList.add("hidden"));
-closeDiagModal.addEventListener("click", () => diagModal.classList.add("hidden"));
-
-const testCases = [
-  { id: "nav", name: "Sidebar Navigation Links Validation", description: "Verifies clicking sidebar items loads correct view hash." },
-  { id: "dashboard", name: "Dashboard Page Content & Widgets", description: "Checks dashboard statistics, holidays, calendar, and weather." },
-  { id: "students", name: "Students Directory & Roster Loading", description: "Ensures students render in grids and details report opens." },
-  { id: "form", name: "Student Enrollment Form & Validations", description: "Simulates student registry inputs, regex validation, and saves." },
-  { id: "attendance", name: "Attendance Roll Call & Calendar", description: "Checks marking present/absent states and sub-tab calendar widget." },
-  { id: "grades", name: "Grades comparisons & PTM Scheduler", description: "Verifies CGPA merit rankings and schedules parent-teacher meetings." },
-  { id: "timetable", name: "Class Timetable & Co-Curricular slots", description: "Ensures sports, Yoga, and Carnatic music slots render." },
-  { id: "fees", name: "Fees Management & UPI Receipt checkout", description: "Simulates paying bills via UPI and verifies tax receipt PDF popups." },
-  { id: "search", name: "Dynamic Global Search Redirection", description: "Verifies searching automatically redirects to registry view." },
-  { id: "a11y", name: "A11y Controls & Font Scaling", description: "Toggles contrast theme variables and scales text size classes." }
-];
-
-function resetDiagnosticsRunner() {
-  startBtn.disabled = false;
-  resetBtn.disabled = true;
-  testProgressBarContainer.style.display = "none";
-  testProgressBar.style.width = "0%";
-  testSummaryText.innerText = `Ready to run ${testCases.length} test suites.`;
-  testSummaryText.style.color = "var(--color-text-muted)";
-  
-  testCasesList.innerHTML = "";
-  testCases.forEach(tc => {
-    const item = document.createElement("div");
-    item.className = "test-case-item";
-    item.id = `tc-${tc.id}`;
-    item.innerHTML = `
-      <div class="test-case-row">
-        <div>
-          <strong style="color:var(--color-blue); font-size:0.9rem;">${tc.name}</strong>
-          <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:2px;">${tc.description}</div>
-        </div>
-        <span class="test-status-badge pending" id="tc-badge-${tc.id}">Pending</span>
-      </div>
-      <div class="test-error-log" id="tc-error-${tc.id}" style="display:none;"></div>
-    `;
-    testCasesList.appendChild(item);
-  });
-}
-
-resetBtn.addEventListener("click", resetDiagnosticsRunner);
-startBtn.addEventListener("click", runE2ETestsSuite);
-
-async function runE2ETestsSuite() {
-  startBtn.disabled = true;
-  resetBtn.disabled = true;
-  testProgressBarContainer.style.display = "block";
-  testProgressBar.style.width = "0%";
-  testSummaryText.innerText = "Running E2E tests...";
-  testSummaryText.style.color = "var(--color-blue)";
-
-  // Cache initial state for rollback restoration
-  const initialView = state.currentView;
-  const initialTheme = state.theme;
-  const initialTextSize = state.textSize;
-  const originalStudentsJSON = JSON.stringify(state.students);
-  const originalHistoryJSON = JSON.stringify(state.paymentHistory);
-
-  let passedCount = 0;
-  
-  const updateBadge = (id, status, errorMsg = "") => {
-    const badge = document.getElementById(`tc-badge-${id}`);
-    const item = document.getElementById(`tc-${id}`);
-    const errorLog = document.getElementById(`tc-error-${id}`);
-    
-    badge.className = `test-status-badge ${status}`;
-    badge.innerText = status;
-    
-    item.className = `test-case-item ${status}`;
-    
-    if (status === "failed" && errorMsg) {
-      errorLog.style.display = "block";
-      errorLog.innerText = `✖ Error: ${errorMsg}`;
-    } else {
-      errorLog.style.display = "none";
-    }
-  };
-
-  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-  // Run Test 1: Navigation
-  try {
-    updateBadge("nav", "running");
-    await delay(600);
-    const navItems = ["dashboard", "students", "attendance", "grades", "timetable", "fees"];
-    for (const view of navItems) {
-      navigateTo(view);
-      await delay(500);
-      if (state.currentView !== view) throw new Error(`Navigation failed for view: ${view}`);
-      if (window.location.hash !== `#${view}`) throw new Error(`Hash failed to update to: #${view}`);
-      const btn = document.getElementById(`nav-${view}`);
-      if (btn && !btn.classList.contains("active")) throw new Error(`Active class not added to sidebar link: ${view}`);
-    }
-    updateBadge("nav", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("nav", "failed", err.message);
-  }
-  testProgressBar.style.width = "10%";
-
-  // Run Test 2: Dashboard Content
-  try {
-    updateBadge("dashboard", "running");
-    await delay(600);
-    navigateTo("dashboard");
-    await delay(500);
-    const container = document.getElementById("dashboard-calendar-container");
-    if (!container || !container.querySelector(".calendar-widget")) throw new Error("Dashboard calendar widget failed to draw.");
-    const weather = document.getElementById("weather-city-selector");
-    if (!weather) throw new Error("Weather monitor widget is missing.");
-    const totalEnrolledSpan = document.querySelector(".stats-card.saffron-border .stats-value");
-    if (!totalEnrolledSpan || !totalEnrolledSpan.innerText.includes("Students")) throw new Error("Student enrollment metric is missing/incorrect.");
-    updateBadge("dashboard", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("dashboard", "failed", err.message);
-  }
-  testProgressBar.style.width = "20%";
-
-  // Run Test 3: Students Registry
-  try {
-    updateBadge("students", "running");
-    await delay(600);
-    navigateTo("students");
-    await delay(500);
-    const grid = document.getElementById("students-grid-container");
-    if (!grid || grid.querySelectorAll(".student-card").length === 0) throw new Error("Students grid fails to load.");
-    
-    // View student details (opens report card modal)
-    const viewBtn = grid.querySelector(".student-card .view-btn");
-    if (!viewBtn) throw new Error("Student details view button is missing.");
-    viewBtn.click();
-    await delay(400);
-    
-    const rModal = document.getElementById("receipt-modal");
-    if (rModal.classList.contains("hidden")) throw new Error("Report card modal failed to open.");
-    
-    const closeBtn = document.getElementById("close-receipt-modal");
-    if (closeBtn) closeBtn.click();
-    await delay(200);
-    if (!rModal.classList.contains("hidden")) throw new Error("Report card modal failed to close.");
-    
-    updateBadge("students", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("students", "failed", err.message);
-  }
-  testProgressBar.style.width = "30%";
-
-  // Run Test 4: Student Form Registration
-  try {
-    updateBadge("form", "running");
-    await delay(600);
-    navigateTo("students");
-    await delay(500);
-    
-    const addBtn = document.getElementById("add-student-trigger");
-    if (!addBtn) throw new Error("Enroll Student button is missing.");
-    addBtn.click();
-    await delay(300);
-    
-    const stModal = document.getElementById("student-modal");
-    if (stModal.classList.contains("hidden")) throw new Error("Enroll Student modal failed to open.");
-    
-    // Populate form data
-    document.getElementById("student-first-name").value = "Vikram";
-    document.getElementById("student-middle-name").value = "K.";
-    document.getElementById("student-last-name").value = "Venkatesh";
-    document.getElementById("student-class").value = "12";
-    document.getElementById("student-section").value = "A";
-    document.getElementById("student-aadhaar").value = "1122 3344 5566";
-    document.getElementById("student-parent-name").value = "Krishna Venkatesh";
-    document.getElementById("student-parent-phone").value = "9845012345";
-    document.getElementById("student-address").value = "Mylapore Car St, Chennai, TN";
-    
-    // Submit form
-    const stForm = document.getElementById("student-form");
-    stForm.dispatchEvent(new Event("submit"));
-    await delay(400);
-    
-    if (!stModal.classList.contains("hidden")) throw new Error("Student modal failed to close on successful submit.");
-    
-    // Check database
-    const newlyAdded = state.students.find(s => s.firstName === "Vikram" && s.lastName === "Venkatesh");
-    if (!newlyAdded) throw new Error("New student record not found in application state database.");
-    
-    updateBadge("form", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("form", "failed", err.message);
-  }
-  testProgressBar.style.width = "40%";
-
-  // Run Test 5: Attendance Roll Call
-  try {
-    updateBadge("attendance", "running");
-    await delay(600);
-    navigateTo("attendance");
-    await delay(500);
-    
-    const tbody = document.getElementById("attendance-rows");
-    if (!tbody || tbody.querySelectorAll("tr").length === 0) throw new Error("Attendance roll call table is empty.");
-    
-    // Simulate updating student attendance
-    const presentBtn = tbody.querySelector("tr .btn-green");
-    if (!presentBtn) throw new Error("Present action button is missing in attendance list.");
-    presentBtn.click();
-    await delay(300);
-    
-    // Toggle subtab
-    const insightsTab = document.getElementById("subtab-insights");
-    if (!insightsTab) throw new Error("Attendance Insights tab is missing.");
-    insightsTab.click();
-    await delay(300);
-    
-    const calendarContainer = document.getElementById("attendance-calendar-container");
-    if (!calendarContainer || !calendarContainer.querySelector(".calendar-widget")) throw new Error("Attendance Insights calendar widget failed to draw.");
-    
-    updateBadge("attendance", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("attendance", "failed", err.message);
-  }
-  testProgressBar.style.width = "50%";
-
-  // Run Test 6: Grades & PTM
-  try {
-    updateBadge("grades", "running");
-    await delay(600);
-    navigateTo("grades");
-    await delay(500);
-    
-    const meritTable = document.querySelector(".grades-layout table tbody");
-    if (!meritTable || meritTable.querySelectorAll("tr").length === 0) throw new Error("Merit list comparison table is empty.");
-    
-    // Test PTM form scheduling
-    const select = document.getElementById("ptm-student");
-    if (!select) throw new Error("PTM Student selection input is missing.");
-    select.selectedIndex = 0;
-    
-    const dateInput = document.getElementById("ptm-date");
-    if (!dateInput) throw new Error("PTM date input is missing.");
-    dateInput.value = "2026-06-15";
-    
-    const ptmForm = document.getElementById("ptm-form");
-    ptmForm.dispatchEvent(new Event("submit"));
-    await delay(400);
-    
-    updateBadge("grades", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("grades", "failed", err.message);
-  }
-  testProgressBar.style.width = "60%";
-
-  // Run Test 7: Timetable View
-  try {
-    updateBadge("timetable", "running");
-    await delay(600);
-    navigateTo("timetable");
-    await delay(500);
-    
-    const slots = document.querySelectorAll(".timetable-slot");
-    if (slots.length === 0) throw new Error("Timetable grid contains no classes/slots.");
-    
-    let hasCoCurricular = false;
-    slots.forEach(slot => {
-      if (slot.classList.contains("co-curricular")) hasCoCurricular = true;
-    });
-    if (!hasCoCurricular) throw new Error("Timetable is missing standard Indian co-curricular slots (Yoga, Carnatic music, etc.).");
-    
-    updateBadge("timetable", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("timetable", "failed", err.message);
-  }
-  testProgressBar.style.width = "70%";
-
-  // Run Test 8: Fees UPI Checkout & Receipt
-  try {
-    updateBadge("fees", "running");
-    await delay(600);
-    navigateTo("fees");
-    await delay(500);
-    
-    const payBtn = document.querySelector(".fees-grid .pay-btn");
-    if (!payBtn) throw new Error("No outstanding payment button found.");
-    payBtn.click();
-    await delay(400);
-    
-    const pModal = document.getElementById("payment-modal");
-    if (pModal.classList.contains("hidden")) throw new Error("UPI payment gateway modal failed to open.");
-    
-    const confirmBtn = document.getElementById("confirm-payment-btn");
-    if (!confirmBtn) throw new Error("Simulate Payment Success button is missing.");
-    confirmBtn.click();
-    await delay(500);
-    
-    if (!pModal.classList.contains("hidden")) throw new Error("UPI payment gateway modal failed to close.");
-    
-    // Receipt Modal Verification
-    const receiptModal = document.getElementById("receipt-modal");
-    if (receiptModal.classList.contains("hidden")) throw new Error("GST Tax Invoice receipt modal failed to load immediately.");
-    
-    const closeBtn = document.getElementById("close-receipt-modal");
-    if (closeBtn) closeBtn.click();
-    await delay(200);
-    
-    updateBadge("fees", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("fees", "failed", err.message);
-  }
-  testProgressBar.style.width = "80%";
-
-  // Run Test 9: Search Functionality
-  try {
-    updateBadge("search", "running");
-    await delay(600);
-    navigateTo("dashboard");
-    await delay(500);
-    
-    const globalSearch = document.getElementById("global-search");
-    if (!globalSearch) throw new Error("Global Search bar input is missing.");
-    
-    // Simulate user typing in header search
-    globalSearch.value = "Ananya";
-    globalSearch.dispatchEvent(new Event("input"));
-    await delay(500);
-    
-    if (state.currentView !== "students") throw new Error("Search input failed to auto-redirect user to the Students directory.");
-    
-    const grid = document.getElementById("students-grid-container");
-    const visibleCards = grid.querySelectorAll(".student-card");
-    if (visibleCards.length !== 1) throw new Error(`Search filtering failed. Expected 1 card, found ${visibleCards.length}.`);
-    
-    // Reset search
-    globalSearch.value = "";
-    globalSearch.dispatchEvent(new Event("input"));
-    await delay(500);
-    
-    updateBadge("search", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("search", "failed", err.message);
-  }
-  testProgressBar.style.width = "90%";
-
-  // Run Test 10: A11y Themes & Font Scaling
-  try {
-    updateBadge("a11y", "running");
-    await delay(600);
-    
-    // High contrast toggle test
-    const contrastToggle = document.getElementById("contrast-toggle");
-    if (!contrastToggle) throw new Error("Accessibility high-contrast checkbox is missing.");
-    
-    contrastToggle.checked = true;
-    contrastToggle.dispatchEvent(new Event("change"));
-    await delay(200);
-    if (document.documentElement.getAttribute("data-theme") !== "high-contrast") throw new Error("High-contrast theme style attribute not set on HTML element.");
-    
-    contrastToggle.checked = false;
-    contrastToggle.dispatchEvent(new Event("change"));
-    await delay(200);
-    if (document.documentElement.getAttribute("data-theme") === "high-contrast") throw new Error("Theme style attribute failed to revert to default.");
-    
-    // Font scale test
-    const incBtn = document.getElementById("font-inc");
-    if (!incBtn) throw new Error("Accessibility increase font button is missing.");
-    incBtn.click();
-    await delay(200);
-    if (!document.body.classList.contains("a11y-text-lg")) throw new Error("Increase font class was not applied to document body.");
-    
-    const normalBtn = document.getElementById("font-normal");
-    if (!normalBtn) throw new Error("Accessibility normal font button is missing.");
-    normalBtn.click();
-    await delay(200);
-    if (document.body.classList.contains("a11y-text-lg")) throw new Error("Normal font reset failed to clean body classes.");
-    
-    updateBadge("a11y", "passed");
-    passedCount++;
-  } catch (err) {
-    updateBadge("a11y", "failed", err.message);
-  }
-  testProgressBar.style.width = "100%";
-
-  // Post-Execution Cleanup & Rollbacks
-  await delay(800);
-  
-  // Restore database arrays from backup to maintain zero footprint
-  state.students = JSON.parse(originalStudentsJSON);
-  state.paymentHistory = JSON.parse(originalHistoryJSON);
-  localStorage.setItem("gurukul_students", JSON.stringify(state.students));
-  localStorage.setItem("gurukul_history", JSON.stringify(state.paymentHistory));
-  
-  // Revert UI settings
-  navigateTo(initialView);
-  state.theme = initialTheme;
-  document.documentElement.setAttribute("data-theme", initialTheme);
-  const contrastCheck = document.getElementById("contrast-toggle");
-  if (contrastCheck) contrastCheck.checked = (initialTheme === "high-contrast");
-  
-  changeFontSize(initialTextSize);
-  
-  // Update footer results summary
-  resetBtn.disabled = false;
-  if (passedCount === testCases.length) {
-    testSummaryText.innerText = `SUCCESS: All ${passedCount}/${testCases.length} test suites passed!`;
-    testSummaryText.style.color = "var(--color-green)";
-  } else {
-    testSummaryText.innerText = `FAILURE: ${passedCount}/${testCases.length} passed, ${testCases.length - passedCount} failed. Check error logs.`;
-    testSummaryText.style.color = "var(--color-danger)";
   }
 }
 
@@ -4504,6 +4150,454 @@ function animateCounters() {
     }, 15);
   });
 }
+
+// ==========================================================================
+// TEACHERS MANAGEMENT MODULE FUNCTIONS & HANDLERS
+// ==========================================================================
+
+function renderTeachersView(parent) {
+  const totalTeachers = state.teachers.length;
+  const activeTeachers = state.teachers.filter(t => t.status === "Available").length;
+  const subjectsCovered = new Set(state.teachers.map(t => t.subject)).size;
+  const assignedClasses = new Set(state.teachers.map(t => t.class)).size;
+
+  const headerHtml = `
+    <div class="view-header">
+      <div class="view-title-area">
+        <span class="view-subtitle-devanagari">Faculty Directory</span>
+        <h2>Teachers Management</h2>
+      </div>
+      <div class="view-actions">
+        <button class="btn btn-saffron" id="add-teacher-trigger">➕ Add New Teacher</button>
+      </div>
+    </div>
+  `;
+
+  const statsHtml = `
+    <div class="dashboard-grid">
+      <div class="stats-card saffron-border">
+        <div class="stats-icon-wrapper">👩‍🏫</div>
+        <div class="stats-details">
+          <span class="stats-title">Total Faculty</span>
+          <span class="stats-value" id="stats-total-teachers">${totalTeachers} Teachers</span>
+          <span class="stats-comparison">✓ Roster active</span>
+        </div>
+      </div>
+      
+      <div class="stats-card green-border">
+        <div class="stats-icon-wrapper">✓</div>
+        <div class="stats-details">
+          <span class="stats-title">Active / Available</span>
+          <span class="stats-value" id="stats-active-teachers">${activeTeachers} Active</span>
+          <span class="stats-comparison">Available for lectures</span>
+        </div>
+      </div>
+
+      <div class="stats-card gold-border">
+        <div class="stats-icon-wrapper">📚</div>
+        <div class="stats-details">
+          <span class="stats-title">Subjects Covered</span>
+          <span class="stats-value" id="stats-subjects-covered">${subjectsCovered} Subjects</span>
+          <span class="stats-comparison">English, Science, Sanskrit, etc.</span>
+        </div>
+      </div>
+
+      <div class="stats-card blue-border">
+        <div class="stats-icon-wrapper">🏫</div>
+        <div class="stats-details">
+          <span class="stats-title">Assigned Classes</span>
+          <span class="stats-value" id="stats-assigned-classes">${assignedClasses} Classes</span>
+          <span class="stats-comparison">Classes 10, 11, 12</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const filtersHtml = `
+    <div class="filters-row">
+      <div class="filter-group">
+        <label for="filter-teacher-subject">Subject</label>
+        <select id="filter-teacher-subject">
+          <option value="">All Subjects</option>
+          <option value="Mathematics">Mathematics</option>
+          <option value="Science">Science</option>
+          <option value="Sanskrit">Sanskrit</option>
+          <option value="Social Studies">Social Studies</option>
+          <option value="English">English</option>
+          <option value="Arts">Arts</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-teacher-class">Class</label>
+        <select id="filter-teacher-class">
+          <option value="">All Classes</option>
+          <option value="10">Class 10</option>
+          <option value="11">Class 11</option>
+          <option value="12">Class 12</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-teacher-section">Section</label>
+        <select id="filter-teacher-section">
+          <option value="">All Sections</option>
+          <option value="A">Section A</option>
+          <option value="B">Section B</option>
+          <option value="C">Section C</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-teacher-search">Search Faculty</label>
+        <input type="text" id="filter-teacher-search" placeholder="Search name or ID...">
+      </div>
+    </div>
+
+    <!-- Teacher Grid -->
+    <div class="student-grid" id="teachers-grid-container">
+      <!-- Renders dynamically -->
+    </div>
+  `;
+
+  parent.innerHTML = headerHtml + statsHtml + filtersHtml;
+
+  // Bind events
+  document.getElementById("add-teacher-trigger").addEventListener("click", () => {
+    openTeacherModal();
+  });
+
+  document.getElementById("filter-teacher-subject").addEventListener("change", filterTeachers);
+  document.getElementById("filter-teacher-class").addEventListener("change", filterTeachers);
+  document.getElementById("filter-teacher-section").addEventListener("change", filterTeachers);
+  document.getElementById("filter-teacher-search").addEventListener("input", filterTeachers);
+
+  // Initial render
+  renderTeachersList();
+}
+
+function renderTeachersList() {
+  const grid = document.getElementById("teachers-grid-container");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const subjectFilter = document.getElementById("filter-teacher-subject").value;
+  const classFilter = document.getElementById("filter-teacher-class").value;
+  const sectionFilter = document.getElementById("filter-teacher-section").value;
+  const searchFilter = document.getElementById("filter-teacher-search").value.trim().toLowerCase();
+
+  const filtered = state.teachers.filter(t => {
+    if (subjectFilter && t.subject !== subjectFilter) return false;
+    if (classFilter && t.class !== classFilter) return false;
+    if (sectionFilter && t.section !== sectionFilter) return false;
+    if (searchFilter) {
+      const name = `${t.firstName} ${t.lastName}`.toLowerCase();
+      const matchName = name.includes(searchFilter);
+      const matchId = t.id.toLowerCase().includes(searchFilter);
+      const matchSub = t.subject.toLowerCase().includes(searchFilter);
+      return matchName || matchId || matchSub;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: span 3; text-align:center; padding:50px; color:var(--color-text-muted)">
+        <div style="font-size:3rem; margin-bottom:10px;">👩‍🏫</div>
+        <h3>No Faculty Members Found</h3>
+        <p>Try resetting filters or enroll a new teacher to get started.</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(t => {
+    const card = document.createElement("div");
+    card.className = "student-card teacher-card"; // Reuse layout, style specifically
+    
+    const initials = `${t.firstName[0]}${t.lastName[0]}`;
+    const statusClass = t.status === "Available" ? "present" : "absent";
+    
+    card.innerHTML = `
+      <div class="student-card-header">
+        <div class="student-avatar-circle" style="background:var(--color-saffron-light); color:var(--color-saffron); border: 2px solid var(--color-saffron);">${initials}</div>
+        <div class="student-header-meta">
+          <span class="student-id-badge" style="font-size: 0.7rem; font-weight: 700; background-color: var(--color-saffron-light); color: var(--color-saffron); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 4px; display: inline-block; border: 1px solid rgba(255, 153, 51, 0.3);">ID: ${t.id}</span>
+          <span class="student-class-badge" style="font-size:0.85rem; font-weight:600; color:var(--color-blue);">${t.subject}</span>
+          <span class="student-roll-badge">Class ${t.class} - ${t.section}</span>
+        </div>
+      </div>
+      
+      <div class="student-names-section" style="margin-top: 10px;">
+        <div class="student-name-en" style="font-size: 1.1rem; font-weight: 600;">Dr. ${t.firstName} ${t.lastName}</div>
+      </div>
+
+      <div class="student-info-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem;">
+        <div class="info-row" style="display: flex; justify-content: space-between;">
+          <span class="info-label" style="color: var(--color-text-muted);">Experience:</span>
+          <span class="info-val" style="font-weight: 500;">${t.experience} Years</span>
+        </div>
+        <div class="info-row" style="display: flex; justify-content: space-between;">
+          <span class="info-label" style="color: var(--color-text-muted);">Contact:</span>
+          <span class="info-val" style="font-weight: 500;">+91 ${t.phone}</span>
+        </div>
+        <div class="info-row" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="info-label" style="color: var(--color-text-muted);">Status:</span>
+          <span class="attendance-status-badge ${statusClass}" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;">${t.status}</span>
+        </div>
+      </div>
+
+      <div class="student-card-action-buttons" style="margin-top: 20px; display: flex; gap: 8px;">
+        <button class="card-action-btn btn btn-secondary view-profile-btn" style="flex: 1.2; padding: 6px; font-size:0.8rem;" data-id="${t.id}">View Profile</button>
+        <button class="card-action-btn btn btn-primary edit-teacher-btn" style="flex: 0.9; padding: 6px; font-size:0.8rem;" data-id="${t.id}">Edit</button>
+        <button class="delete-icon-btn remove-teacher-btn" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0 5px;" title="Remove Teacher" data-id="${t.id}">🗑️</button>
+      </div>
+    `;
+
+    // Bind actions
+    card.querySelector(".view-profile-btn").addEventListener("click", () => {
+      openTeacherProfile(t.id);
+    });
+
+    card.querySelector(".edit-teacher-btn").addEventListener("click", () => {
+      openTeacherModal(t.id);
+    });
+
+    card.querySelector(".remove-teacher-btn").addEventListener("click", () => {
+      if (confirm(`Are you sure you want to remove Dr. ${t.firstName} ${t.lastName} from faculty?`)) {
+        removeTeacher(t.id);
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function filterTeachers() {
+  renderTeachersList();
+}
+
+function openTeacherModal(teacherId = null) {
+  const modal = document.getElementById("teacher-modal");
+  const form = document.getElementById("teacher-form");
+  if (!modal || !form) return;
+
+  modal.classList.remove("hidden");
+  form.reset();
+
+  if (teacherId) {
+    document.getElementById("t-modal-title").innerText = "Edit Faculty Profile";
+    const t = state.teachers.find(teacher => teacher.id === teacherId);
+    if (t) {
+      document.getElementById("teacher-db-id").value = t.id;
+      document.getElementById("teacher-first-name").value = t.firstName;
+      document.getElementById("teacher-last-name").value = t.lastName;
+      document.getElementById("teacher-id-val").value = t.id;
+      document.getElementById("teacher-id-val").disabled = true; // Disable editing ID key
+      document.getElementById("teacher-subject").value = t.subject;
+      document.getElementById("teacher-class").value = t.class;
+      document.getElementById("teacher-section").value = t.section;
+      document.getElementById("teacher-qualification").value = t.qualification || "";
+      document.getElementById("teacher-experience").value = t.experience;
+      document.getElementById("teacher-phone").value = t.phone;
+      document.getElementById("teacher-status").value = t.status;
+    }
+  } else {
+    document.getElementById("t-modal-title").innerText = "Enroll New Faculty";
+    document.getElementById("teacher-db-id").value = "";
+    document.getElementById("teacher-id-val").disabled = false;
+  }
+}
+
+// Bind modal close buttons
+document.getElementById("close-teacher-modal")?.addEventListener("click", () => {
+  document.getElementById("teacher-modal")?.classList.add("hidden");
+});
+document.getElementById("cancel-teacher-btn")?.addEventListener("click", () => {
+  document.getElementById("teacher-modal")?.classList.add("hidden");
+});
+
+document.getElementById("teacher-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const dbId = document.getElementById("teacher-db-id").value;
+  const teacherIdVal = document.getElementById("teacher-id-val").value.trim().toUpperCase();
+
+  // Validate duplicate ID for new teachers
+  if (!dbId) {
+    const isDuplicate = state.teachers.some(t => t.id === teacherIdVal);
+    if (isDuplicate) {
+      alertToast("⚠️ Error: Teacher ID already exists.");
+      return;
+    }
+  }
+
+  const first = document.getElementById("teacher-first-name").value.trim();
+  const last = document.getElementById("teacher-last-name").value.trim();
+  const subj = document.getElementById("teacher-subject").value;
+  const cls = document.getElementById("teacher-class").value;
+  const sec = document.getElementById("teacher-section").value;
+  const qual = document.getElementById("teacher-qualification").value.trim();
+  const exp = parseInt(document.getElementById("teacher-experience").value);
+  const ph = document.getElementById("teacher-phone").value.trim();
+  const stat = document.getElementById("teacher-status").value;
+
+  if (dbId) {
+    // Update existing
+    const idx = state.teachers.findIndex(t => t.id === dbId);
+    if (idx !== -1) {
+      state.teachers[idx] = {
+        ...state.teachers[idx],
+        firstName: first,
+        lastName: last,
+        subject: subj,
+        class: cls,
+        section: sec,
+        qualification: qual,
+        experience: exp,
+        phone: ph,
+        status: stat
+      };
+      alertToast("Faculty profile updated successfully.");
+      addNotification(`Updated profile for Dr. ${first} ${last}`);
+      addActivity(`Updated faculty profile: Dr. ${first} ${last}`, "teachers");
+    }
+  } else {
+    // Create new with a default mock schedule
+    const newT = {
+      id: teacherIdVal,
+      firstName: first,
+      lastName: last,
+      subject: subj,
+      class: cls,
+      section: sec,
+      qualification: qual,
+      experience: exp,
+      phone: ph,
+      status: stat,
+      schedule: {
+        "Monday": [subj, "Free", subj, "Free", subj],
+        "Tuesday": ["Free", subj, "Free", subj, "Free"],
+        "Wednesday": [subj, subj, "Free", "Free", subj],
+        "Thursday": ["Free", "Free", subj, subj, "Free"],
+        "Friday": [subj, "Free", "Free", subj, subj]
+      }
+    };
+    state.teachers.push(newT);
+    alertToast("New faculty member enrolled successfully!");
+    addNotification(`Enrolled teacher Dr. ${first} ${last}`);
+    addActivity(`Enrolled new faculty member: Dr. ${first} ${last} (ID: ${teacherIdVal})`, "teachers");
+  }
+
+  saveTeachersToLocalStorage();
+  document.getElementById("teacher-modal").classList.add("hidden");
+  
+  // Re-render teachers view
+  if (state.currentView === "teachers") {
+    renderTeachersView(document.getElementById("main-content"));
+  }
+});
+
+function removeTeacher(teacherId) {
+  const idx = state.teachers.findIndex(t => t.id === teacherId);
+  if (idx !== -1) {
+    const t = state.teachers[idx];
+    state.teachers.splice(idx, 1);
+    saveTeachersToLocalStorage();
+    alertToast(`Dr. ${t.firstName} ${t.lastName} removed from faculty.`);
+    addNotification(`Removed teacher Dr. ${t.firstName} ${t.lastName}`);
+    addActivity(`Removed faculty member: Dr. ${t.firstName} ${t.lastName} (ID: ${teacherId})`, "teachers");
+    
+    // Re-render
+    renderTeachersView(document.getElementById("main-content"));
+  }
+}
+
+let activeProfileTeacherId = null;
+
+function openTeacherProfile(teacherId) {
+  const modal = document.getElementById("teacher-profile-modal");
+  if (!modal) return;
+
+  const t = state.teachers.find(teacher => teacher.id === teacherId);
+  if (!t) return;
+
+  activeProfileTeacherId = teacherId;
+  modal.classList.remove("hidden");
+
+  const initials = `${t.firstName[0]}${t.lastName[0]}`;
+  document.getElementById("tp-avatar").innerText = initials;
+  document.getElementById("tp-name").innerText = `Dr. ${t.firstName} ${t.lastName}`;
+  document.getElementById("tp-id").innerText = t.id;
+  document.getElementById("tp-qualification").innerText = t.qualification || "B.Ed";
+  document.getElementById("tp-experience").innerText = `${t.experience} Years`;
+  document.getElementById("tp-subject").innerText = t.subject;
+  document.getElementById("tp-class-section").innerText = `Class ${t.class} - ${t.section}`;
+  document.getElementById("tp-contact").innerText = `+91 ${t.phone}`;
+  
+  const statusSpan = document.getElementById("tp-status");
+  statusSpan.className = `attendance-status-badge ${t.status === "Available" ? "present" : "absent"}`;
+  statusSpan.innerText = t.status;
+
+  // Render weekly schedule
+  const tbody = document.getElementById("tp-schedule-tbody");
+  tbody.innerHTML = "";
+
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  days.forEach(day => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--color-border)";
+    
+    const slots = t.schedule?.[day] || ["Free", "Free", "Free", "Free", "Free"];
+    
+    tr.innerHTML = `
+      <td style="padding:8px; font-weight:600; text-align:left; background:var(--color-bg-base);">${day}</td>
+      <td style="padding:8px; color: ${slots[0] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[0] === "Free" ? "400" : "600"};">${slots[0]}</td>
+      <td style="padding:8px; color: ${slots[1] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[1] === "Free" ? "400" : "600"};">${slots[1]}</td>
+      <td style="padding:8px; color: ${slots[2] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[2] === "Free" ? "400" : "600"};">${slots[2]}</td>
+      <td style="padding:8px; color: ${slots[3] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[3] === "Free" ? "400" : "600"};">${slots[3]}</td>
+      <td style="padding:8px; color: ${slots[4] === "Free" ? "var(--color-text-muted)" : "var(--color-saffron)"}; font-weight: ${slots[4] === "Free" ? "400" : "600"};">${slots[4]}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Set default assign dropdown values
+  document.getElementById("tp-assign-class").value = t.class;
+  document.getElementById("tp-assign-section").value = t.section;
+}
+
+// Bind profile close actions
+document.getElementById("close-profile-modal")?.addEventListener("click", () => {
+  document.getElementById("teacher-profile-modal")?.classList.add("hidden");
+});
+document.getElementById("close-profile-btn")?.addEventListener("click", () => {
+  document.getElementById("teacher-profile-modal")?.classList.add("hidden");
+});
+
+// Bind assign update action
+document.getElementById("tp-assign-btn")?.addEventListener("click", () => {
+  if (!activeProfileTeacherId) return;
+
+  const targetClass = document.getElementById("tp-assign-class").value;
+  const targetSection = document.getElementById("tp-assign-section").value;
+
+  const idx = state.teachers.findIndex(t => t.id === activeProfileTeacherId);
+  if (idx !== -1) {
+    const t = state.teachers[idx];
+    t.class = targetClass;
+    t.section = targetSection;
+    saveTeachersToLocalStorage();
+    
+    // Update visual info in profile modal
+    document.getElementById("tp-class-section").innerText = `Class ${targetClass} - ${targetSection}`;
+    
+    alertToast(`Assigned Dr. ${t.firstName} ${t.lastName} to Class ${targetClass} - ${targetSection} successfully.`);
+    addNotification(`Assigned Dr. ${t.firstName} ${t.lastName} to Class ${targetClass} - ${targetSection}`);
+    addActivity(`Updated class assignment for Dr. ${t.firstName} ${t.lastName}: Class ${targetClass} - ${targetSection}`, "teachers");
+    
+    // Re-render teachers view in background
+    renderTeachersView(document.getElementById("main-content"));
+  }
+});
 
 
 
