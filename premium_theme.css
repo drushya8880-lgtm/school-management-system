@@ -823,5 +823,412 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-saffron) !important;
 }
 
+/* --- 6. Redesigned Teacher Profile Detail Modal --- */
+
+/* Blur background wrapper */
+#teacher-profile-modal {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.3s ease !important;
+}
+
+/* Modal Content Box */
+.teacher-profile-modal-content {
+  width: 90vw !important;
+  max-width: 1300px !important;
+  height: 85vh !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--glass-card-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
+  animation: modalScaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.teacher-profile-modal-content .modal-header {
+  padding: 20px 32px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.teacher-profile-modal-content .modal-header h2 {
+  font-family: var(--font-headings) !important;
+  font-weight: 700 !important;
+  color: var(--color-blue) !important;
+  margin: 0 !important;
+  font-size: 1.4rem !important;
+}
+
+/* Close Button */
+.teacher-profile-modal-content .close-modal-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--color-text-main) !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.3rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.teacher-profile-modal-content .close-modal-btn:hover {
+  background: var(--color-saffron) !important;
+  color: white !important;
+  border-color: var(--color-saffron) !important;
+  transform: rotate(90deg);
+}
+
+/* Two-Panel Body Layout */
+.teacher-profile-body-layout {
+  display: grid !important;
+  grid-template-columns: 30% 70% !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+/* Left Panel Sidebar */
+.profile-info-sidebar {
+  padding: 32px !important;
+  border-right: 1px solid var(--glass-border) !important;
+  background: rgba(0, 0, 0, 0.01) !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Avatar Container */
+.profile-info-sidebar .avatar-container {
+  width: 120px !important;
+  height: 120px !important;
+  border-radius: 50% !important;
+  padding: 4px !important;
+  background: linear-gradient(135deg, var(--color-saffron), var(--color-blue)) !important;
+  margin-bottom: 20px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+#tp-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  background: var(--color-bg-card) !important;
+  color: var(--color-blue) !important;
+  font-size: 2.8rem !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.profile-info-sidebar h3 {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  color: var(--color-blue) !important;
+  margin: 0 0 6px 0 !important;
+  text-align: center !important;
+}
+
+#tp-id {
+  font-size: 0.8rem !important;
+  background: var(--color-saffron-light) !important;
+  color: var(--color-saffron) !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  font-weight: 700 !important;
+  margin-bottom: 24px !important;
+  border: 1px solid rgba(255, 153, 51, 0.2) !important;
+  display: inline-block !important;
+}
+
+/* Fields list styling */
+.profile-fields-list {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  border-top: 1px solid var(--glass-border) !important;
+  padding-top: 24px !important;
+}
+
+.profile-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  text-align: left !important;
+  width: 100% !important;
+}
+
+.profile-field .field-label {
+  font-size: 0.75rem !important;
+  color: var(--color-text-muted) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.profile-field .field-value {
+  font-size: 0.95rem !important;
+  color: var(--color-text-main) !important;
+  font-weight: 700 !important;
+}
+
+/* Right Panel Sidebar */
+.profile-schedule-main {
+  padding: 32px !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+.schedule-header-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 2px solid var(--color-saffron-light) !important;
+  padding-bottom: 12px !important;
+}
+
+.schedule-header-row h4 {
+  color: var(--color-blue) !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+.schedule-badge {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: var(--color-blue) !important;
+  background: var(--color-blue-light) !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+}
+
+/* Timetable Table Wrapper with scroll */
+.timetable-table-wrapper {
+  width: 100% !important;
+  overflow-x: auto !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02) !important;
+}
+
+/* Modern Timetable Styling */
+.timetable-table-wrapper .schedule-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 0.95rem !important;
+  text-align: center !important;
+  min-width: 750px !important;
+}
+
+.timetable-table-wrapper .schedule-table th {
+  background: var(--color-blue-light) !important;
+  color: var(--color-blue) !important;
+  padding: 14px 12px !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid var(--glass-border) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.timetable-table-wrapper .schedule-table th .slot-time {
+  display: block !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  opacity: 0.8 !important;
+  margin-top: 2px !important;
+}
+
+.timetable-table-wrapper .schedule-table td {
+  padding: 14px 12px !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.timetable-table-wrapper .schedule-table tr:hover td {
+  background: rgba(255, 153, 51, 0.02) !important;
+}
+
+.timetable-table-wrapper .schedule-table td:first-child {
+  font-weight: 700 !important;
+  text-align: left !important;
+  background: rgba(0,0,0,0.02) !important;
+  border-right: 1px solid var(--glass-border) !important;
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 5 !important;
+}
+
+/* Assign Section */
+.assign-teacher-section {
+  background: rgba(255, 153, 51, 0.03) !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 153, 51, 0.15) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+.assign-section-title h4 {
+  margin: 0 0 4px 0 !important;
+  color: var(--color-saffron) !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+}
+
+.assign-section-title p {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--color-text-muted) !important;
+}
+
+.assign-controls-row {
+  display: flex !important;
+  gap: 16px !important;
+  flex-grow: 1 !important;
+  justify-content: flex-end !important;
+}
+
+.assign-select-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 130px !important;
+}
+
+.assign-select-group label {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--color-text-muted) !important;
+}
+
+.assign-select-group select {
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--color-bg-base) !important;
+  color: var(--color-text-main) !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  transition: all 0.25s ease !important;
+  cursor: pointer !important;
+}
+
+.assign-select-group select:hover {
+  border-color: var(--color-saffron) !important;
+}
+
+.assign-select-group select:focus {
+  border-color: var(--color-saffron) !important;
+  box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.15) !important;
+}
+
+/* Footer Section */
+.teacher-profile-modal-content .modal-footer {
+  padding: 16px 32px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* Save Changes button styling */
+#tp-assign-btn {
+  background: var(--color-saffron) !important;
+  color: white !important;
+  padding: 10px 24px !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(230, 81, 0, 0.2) !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
+}
+
+#tp-assign-btn:hover {
+  background: var(--color-saffron-hover) !important;
+  box-shadow: 0 6px 20px rgba(230, 81, 0, 0.3) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+#close-profile-btn {
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  font-size: 0.9rem !important;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] #tp-avatar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+[data-theme="dark"] .timetable-table-wrapper .schedule-table td:first-child {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 992px) {
+  .teacher-profile-modal-content {
+    height: 90vh !important;
+    max-height: 90vh !important;
+  }
+  .teacher-profile-body-layout {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  .profile-info-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    overflow-y: visible !important;
+  }
+  .profile-schedule-main {
+    overflow-y: visible !important;
+  }
+}
+
+
 
 

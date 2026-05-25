@@ -566,55 +566,72 @@
   </div>
 
   <!-- Detailed Teacher Profile & Schedule Modal -->
-  <div id="teacher-profile-modal" class="modal hidden" role="dialog" aria-modal="true"
-    aria-labelledby="profile-modal-title">
-    <div class="modal-content" style="max-width: 750px;">
+  <div id="teacher-profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+    <div class="modal-content teacher-profile-modal-content">
+      
+      <!-- Fixed Header -->
       <div class="modal-header">
-        <h2 id="profile-modal-title">Teacher Profile Detail</h2>
-        <button class="close-modal-btn" id="close-profile-modal">&times;</button>
+        <h2 id="profile-modal-title">👨‍🏫 Faculty Profile Detail</h2>
+        <button class="close-modal-btn" id="close-profile-modal" aria-label="Close modal">&times;</button>
       </div>
-      <div class="teacher-profile-layout"
-        style="display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 15px 0;">
-        <!-- Profile info column -->
-        <div class="profile-info-sidebar"
-          style="display:flex; flex-direction:column; align-items:center; text-align:center; border-right: 1px solid var(--color-border); padding-right:20px;">
-          <div id="tp-avatar"
-            style="width: 100px; height: 100px; border-radius:50%; background: var(--color-saffron-light); color: var(--color-saffron); font-size:2.2rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:2px solid var(--color-saffron); box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-            T</div>
-          <h3 id="tp-name" style="margin-bottom:5px; font-size:1.15rem; color:var(--color-blue);">Dr. Rajesh Kumar</h3>
-          <span id="tp-id"
-            style="font-size:0.75rem; background: var(--color-saffron-light); color: var(--color-saffron); padding:2px 8px; border-radius:10px; font-weight:600; margin-bottom:12px;">TCH001</span>
+      
+      <!-- Body Section -->
+      <div class="teacher-profile-body-layout">
+        
+        <!-- Left Panel (30%): Profile info sidebar -->
+        <div class="profile-info-sidebar">
+          <div class="avatar-container">
+            <div id="tp-avatar">T</div>
+          </div>
+          <h3 id="tp-name">Dr. Rajesh Kumar</h3>
+          <span id="tp-id">TCH001</span>
 
-          <div
-            style="width:100%; text-align:left; font-size:0.85rem; display:flex; flex-direction:column; gap:8px; margin-top:10px; border-top: 1px solid var(--color-border); padding-top:12px;">
-            <div><strong>Qualification:</strong> <span id="tp-qualification">M.Sc., Ph.D.</span></div>
-            <div><strong>Experience:</strong> <span id="tp-experience">12 Years</span></div>
-            <div><strong>Subject:</strong> <span id="tp-subject">Mathematics</span></div>
-            <div><strong>Assigned Class:</strong> <span id="tp-class-section">Class 12 - A</span></div>
-            <div><strong>Contact:</strong> <span id="tp-contact">+91 9876543210</span></div>
-            <div><strong>Status:</strong> <span id="tp-status" class="attendance-status-badge present">Available</span>
+          <div class="profile-fields-list">
+            <div class="profile-field">
+              <span class="field-label">🎓 Qualification</span>
+              <span class="field-value" id="tp-qualification">M.Sc., Ph.D.</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">💼 Experience</span>
+              <span class="field-value" id="tp-experience">12 Years</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">📚 Subject</span>
+              <span class="field-value" id="tp-subject">Mathematics</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">🏫 Assigned Class</span>
+              <span class="field-value" id="tp-class-section">Class 12 - A</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">📞 Contact</span>
+              <span class="field-value" id="tp-contact">+91 9876543210</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">⚡ Status</span>
+              <span id="tp-status" class="attendance-status-badge present">Available</span>
             </div>
           </div>
         </div>
 
-        <!-- Schedule Column & Assignment UI -->
-        <div class="profile-schedule-main" style="display:flex; flex-direction:column; gap:16px;">
-          <h4
-            style="color:var(--color-blue); font-size:1rem; border-bottom: 2px solid var(--color-saffron-light); padding-bottom:6px; margin:0;">
-            Weekly Lecture Schedule</h4>
+        <!-- Right Panel (70%): Schedule & Assignment -->
+        <div class="profile-schedule-main">
+          <div class="schedule-header-row">
+            <h4>📅 Weekly Lecture Timetable</h4>
+            <span class="schedule-badge">Standard 5-Slot Schedule</span>
+          </div>
 
-          <div style="overflow-x: auto;">
-            <table class="schedule-table"
-              style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:center;">
+          <!-- Schedule Table Container -->
+          <div class="timetable-table-wrapper">
+            <table class="schedule-table">
               <thead>
-                <tr
-                  style="background:var(--color-blue-light); color:var(--color-blue); border-bottom:2px solid var(--color-border);">
-                  <th style="padding:6px;">Day</th>
-                  <th style="padding:6px;">Period 1</th>
-                  <th style="padding:6px;">Period 2</th>
-                  <th style="padding:6px;">Period 3</th>
-                  <th style="padding:6px;">Period 4</th>
-                  <th style="padding:6px;">Period 5</th>
+                <tr>
+                  <th>Day of Week</th>
+                  <th>Period 1 <span class="slot-time">08:00 - 08:40</span></th>
+                  <th>Period 2 <span class="slot-time">08:45 - 09:40</span></th>
+                  <th>Period 3 <span class="slot-time">09:40 - 10:35</span></th>
+                  <th>Period 4 <span class="slot-time">11:10 - 12:00</span></th>
+                  <th>Period 5 <span class="slot-time">12:05 - 13:10</span></th>
                 </tr>
               </thead>
               <tbody id="tp-schedule-tbody">
@@ -624,31 +641,43 @@
           </div>
 
           <!-- Assign Teacher Form UI -->
-          <div class="assign-teacher-section"
-            style="margin-top: 15px; background: rgba(255, 153, 51, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(255, 153, 51, 0.15);">
-            <h4 style="color:var(--color-saffron); font-size:0.95rem; margin-top:0; margin-bottom:10px;">Assign to Class
-              & Section</h4>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <select id="tp-assign-class" style="flex:1; min-width:100px;">
-                <option value="10">Class 10</option>
-                <option value="11">Class 11</option>
-                <option value="12">Class 12</option>
-              </select>
-              <select id="tp-assign-section" style="flex:1; min-width:100px;">
-                <option value="A">Section A</option>
-                <option value="B">Section B</option>
-                <option value="C">Section C</option>
-              </select>
-              <button class="btn btn-saffron" id="tp-assign-btn" style="padding: 8px 16px; font-size:0.85rem; font-weight:600; border-radius:10px;">Save Changes</button>
+          <div class="assign-teacher-section">
+            <div class="assign-section-title">
+              <h4>🏫 Modify Class Assignment</h4>
+              <p>Re-assign teacher to Class & Section</p>
+            </div>
+            <div class="assign-controls-row">
+              <div class="assign-select-group">
+                <label for="tp-assign-class">Class</label>
+                <select id="tp-assign-class">
+                  <option value="10">Class 10</option>
+                  <option value="11">Class 11</option>
+                  <option value="12">Class 12</option>
+                </select>
+              </div>
+              <div class="assign-select-group">
+                <label for="tp-assign-section">Section</label>
+                <select id="tp-assign-section">
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                </select>
+              </div>
             </div>
           </div>
+          
         </div>
       </div>
-      <div class="modal-footer" style="border-top:1px solid var(--color-border); padding-top:15px; margin-top:10px;">
+      
+      <!-- Fixed Footer -->
+      <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="close-profile-btn" style="width:100px;">Close</button>
+        <button type="button" class="btn btn-saffron" id="tp-assign-btn">Save Changes</button>
       </div>
+      
     </div>
   </div>
+
 
   <!-- Application Logic JavaScript -->
   <script src="app.js"></script>

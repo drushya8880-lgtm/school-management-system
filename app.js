@@ -1273,11 +1273,9 @@ function renderDashboardView(parent) {
     <div class="dashboard-main-row">
       <!-- Left Panel: Calendar Widget, Weather & Activity Feed -->
       <div style="display:flex; flex-direction:column; gap:24px;">
-        <!-- Live Clock & Simulator center -->
-        <div class="panel-card live-clock-card" id="live-clock-panel"></div>
-
         <div class="panel-card">
           <div class="panel-title-row">
+
 
             <div>
               <h3 class="panel-title">Indian Festival & Academic Calendar</h3>
@@ -1413,7 +1411,7 @@ function renderDashboardView(parent) {
   renderDashboardActivities();
   drawDashboardCharts();
   animateCounters();
-  updateDashboardClockUI(getCurrentVirtualTime());
+
 
 
   // Bind quick action click events
