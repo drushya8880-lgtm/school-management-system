@@ -1112,7 +1112,7 @@ input:checked+.slider:before {
 /* Weather Widget and Indian City Selector */
 .weather-widget {
   background: linear-gradient(135deg, var(--color-blue), var(--color-blue-hover));
-  color: white;
+  color: var(--color-text-main);
   border-radius: var(--border-radius-lg);
   padding: 20px;
   display: flex;
@@ -1128,35 +1128,44 @@ input:checked+.slider:before {
 }
 
 .weather-city-select {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: none;
+  background: var(--color-bg-base);
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
   outline: none;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: var(--border-radius-sm);
   font-weight: 600;
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.weather-city-select:focus {
+  border-color: var(--color-saffron);
 }
 
 .weather-city-select option {
-  background-color: var(--color-blue);
-  color: white;
+  background-color: var(--color-bg-card);
+  color: var(--color-text-main);
 }
 
 .weather-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
 }
 
 .weather-temp {
   font-size: 2rem;
   font-weight: 700;
+  display: block;
+  line-height: 1.2;
 }
 
 .weather-desc {
   font-size: 0.85rem;
-  opacity: 0.85;
+  color: var(--color-text-muted);
 }
 
 .weather-details {
@@ -1164,8 +1173,8 @@ input:checked+.slider:before {
   justify-content: space-between;
   font-size: 0.75rem;
   opacity: 0.8;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
 }
 
 /* Circular Progress Chart Components */
@@ -2548,20 +2557,30 @@ input:checked+.slider:before {
 
 .input-icon-login {
   position: absolute;
-  left: 12px;
-  font-size: 1rem;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .input-wrapper-login input {
   width: 100%;
-  padding: 12px 12px 12px 38px;
+  padding: 12px 12px 12px 45px;
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
   outline: none;
   font-size: 0.9rem;
   background-color: var(--color-bg-base);
   color: var(--color-text-main);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+.input-wrapper-login input:hover {
+  border-color: var(--color-saffron);
 }
 
 .input-wrapper-login input:focus {

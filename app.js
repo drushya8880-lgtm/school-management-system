@@ -228,7 +228,8 @@ const state = {
 
 // Activity & Notification Helpers
 function addActivity(text, type = "system") {
-  const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const virtualNow = getCurrentVirtualTime();
+  const timeStr = virtualNow.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   state.activities.unshift({
     id: "act_" + Date.now(),
     text: text,
@@ -243,11 +244,13 @@ function addActivity(text, type = "system") {
 }
 
 function addNotification(title) {
+  const virtualNow = getCurrentVirtualTime();
+  const timeStr = virtualNow.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
   state.notifications.unshift({
     id: "notif_" + Date.now(),
     title: title,
     unread: true,
-    time: "Just now"
+    time: timeStr
   });
   updateNotificationBadge();
   renderNotificationsList();
@@ -464,6 +467,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupGlobalEvents();
   setupNetworkSimulator();
   setupLoginHandler();
+  startGlobalClock();
 
   // Check if logged in first
   if (checkLoginState()) {
@@ -783,9 +787,389 @@ function renderCurrentView() {
   }
 }
 
-// ==========================================================================
-// VIEW RENDERERS
-// ==========================================================================
+// --- 1. Global Time Service & Simulation Center ---
+function getCurrentVirtualTime() {
+  if (state.simulationOffset === undefined) state.simulationOffset = 0;
+  return new Date(Date.now() + state.simulationOffset);
+}
+
+function getVirtualPeriodDetails(nowDate) {
+  const hours = nowDate.getHours();
+  const minutes = nowDate.getMinutes();
+  const mins = hours * 60 + minutes;
+  
+  const dayIdx = nowDate.getDay(); // 0 is Sunday, 6 is Saturday
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayName = daysOfWeek[dayIdx];
+  
+  const periods = [
+    { id: 1, start: "08:00", end: "08:40", label: "Period 1", name: "Mathematics", room: "Room 101", teacher: "Dr. Rajesh Kumar" },
+    { id: 2, start: "08:45", end: "09:40", label: "Period 2", name: "Sanskrit", room: "Room 102", teacher: "Dr. Sunita Desai" },
+    { id: 3, start: "09:40", end: "10:35", label: "Period 3", name: "English", room: "Room 104", teacher: "Dr. Preeti Sharma" },
+    { id: "recess", start: "10:35", end: "11:10", label: "Recess Break", name: "Mid-Day Meal Break", room: "Cafeteria", teacher: "Staff" },
+    { id: 4, start: "11:10", end: "12:00", label: "Period 4", name: "Science", room: "Room 103", teacher: "Dr. Amit Trivedi" },
+    { id: 5, start: "12:05", end: "13:10", label: "Period 5 (Exam Slot)", name: "Term Examination", room: "Main Assembly Hall", teacher: "All Proctors" },
+    { id: 6, start: "13:10", end: "14:00", label: "Period 6", name: "Social Studies", room: "Room 105", teacher: "Dr. Vikram Venkatesh" }
+  ];
+  
+  function parseMins(tStr) {
+    const [h, m] = tStr.split(":").map(Number);
+    return h * 60 + m;
+  }
+  
+  let active = null;
+  let next = null;
+  
+  for (let i = 0; i < periods.length; i++) {
+    const p = periods[i];
+    const startMins = parseMins(p.start);
+    const endMins = parseMins(p.end);
+    if (mins >= startMins && mins < endMins) {
+      active = p;
+      next = periods[i + 1] || null;
+      break;
+    }
+  }
+  
+  if (!active) {
+    if (mins < parseMins(periods[0].start)) {
+      next = periods[0];
+    } else {
+      for (let i = 0; i < periods.length - 1; i++) {
+        const pCurr = periods[i];
+        const pNext = periods[i + 1];
+        if (mins >= parseMins(pCurr.end) && mins < parseMins(pNext.start)) {
+          next = pNext;
+          break;
+        }
+      }
+    }
+  }
+  
+  const isWeekend = (dayIdx === 0 || dayIdx === 6);
+  
+  return {
+    dayName,
+    isWeekend,
+    activePeriod: active,
+    nextPeriod: next,
+    minsOfDay: mins,
+    periods
+  };
+}
+
+let globalClockInterval = null;
+function startGlobalClock() {
+  if (globalClockInterval) clearInterval(globalClockInterval);
+  globalClockInterval = setInterval(() => {
+    const now = getCurrentVirtualTime();
+    
+    // 1. Update Live Clock card elements if on dashboard
+    updateDashboardClockUI(now);
+    
+    // 2. Perform background checks (reminders, auto-refresh active views)
+    performRealTimeTimeChecks(now);
+  }, 1000);
+}
+
+function performRealTimeTimeChecks(now) {
+  if (state.currentView === "timetable") {
+    const mainPanel = document.getElementById("timetable-main-panel");
+    if (mainPanel) {
+      updateTimetableStatsAndDraw();
+    }
+  }
+  
+  if (state.currentView === "attendance") {
+    const tbody = document.getElementById("attendance-rows");
+    if (tbody) {
+      drawAttendanceRegister();
+    }
+  }
+
+  // Reminder/Notification system
+  const dayIdx = now.getDay();
+  if (dayIdx >= 1 && dayIdx <= 5) {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const secs = now.getSeconds();
+    
+    const pTimes = [
+      { id: 1, start: "08:00", label: "Period 1" },
+      { id: 2, start: "08:45", label: "Period 2" },
+      { id: 3, start: "09:40", label: "Period 3" },
+      { id: 4, start: "11:10", label: "Period 4" },
+      { id: 5, start: "12:05", label: "Period 5" },
+      { id: 6, start: "13:10", label: "Period 6" }
+    ];
+    
+    pTimes.forEach(p => {
+      const [sh, sm] = p.start.split(":").map(Number);
+      const startMins = sh * 60 + sm;
+      const diff = startMins - mins;
+      
+      if (diff === 3 && secs === 0) {
+        const notifKey = `${now.toDateString()}_${p.id}`;
+        if (!state.notifiedPeriods) state.notifiedPeriods = {};
+        if (!state.notifiedPeriods[notifKey]) {
+          state.notifiedPeriods[notifKey] = true;
+          addNotification(`🔔 Lecture alert: ${p.label} starts in 3 minutes!`);
+          alertToast(`🔔 Reminder: ${p.label} starts in 3 minutes!`);
+        }
+      }
+    });
+  }
+}
+
+function updateDashboardClockUI(now) {
+  const panel = document.getElementById("live-clock-panel");
+  if (!panel) return;
+
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  
+  const periodInfo = getVirtualPeriodDetails(now);
+  
+  let activePeriodHtml = "";
+  let progressPct = 0;
+  let nextPeriodHtml = "";
+  
+  if (periodInfo.isWeekend) {
+    activePeriodHtml = `
+      <div class="active-class-box status-weekend" style="padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--color-border); text-align: center;">
+        <span class="active-status-tag" style="background: var(--color-border); color: var(--color-text-muted); font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px;">WEEKEND</span>
+        <h4 style="margin: 4px 0; color: var(--color-blue); font-size: 0.95rem;">📅 Campus Closed</h4>
+        <p style="margin: 0; font-size: 0.75rem; color: var(--color-text-muted);">No active classes or lectures scheduled today.</p>
+      </div>
+    `;
+  } else if (periodInfo.activePeriod) {
+    const active = periodInfo.activePeriod;
+    const [startH, startM] = active.start.split(":").map(Number);
+    const [endH, endM] = active.end.split(":").map(Number);
+    const startMins = startH * 60 + startM;
+    const endMins = endH * 60 + endM;
+    const elapsed = periodInfo.minsOfDay - startMins;
+    const duration = endMins - startMins;
+    progressPct = Math.min(100, Math.max(0, Math.round((elapsed / duration) * 100)));
+    const remainingMins = endMins - periodInfo.minsOfDay;
+    
+    activePeriodHtml = `
+      <div class="active-class-box status-active" style="padding: 12px; border-radius: 12px; background: rgba(19, 136, 8, 0.05); border: 1px solid var(--color-green); text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <span class="active-status-tag active" style="background: var(--color-green-light); color: var(--color-green); font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">ONGOING LECTURE</span>
+          <span class="active-time-left" style="font-size: 0.75rem; font-weight: 600; color: var(--color-green);">⏳ ${remainingMins}m left</span>
+        </div>
+        <h4 style="margin: 4px 0; color: var(--color-blue); font-size: 0.95rem;">${active.label}: ${active.name}</h4>
+        <div style="display:flex; justify-content:space-between; font-size: 0.8rem; opacity: 0.85; margin: 4px 0;">
+          <span>🧑‍🏫 Teacher: <strong>${active.teacher}</strong></span>
+          <span>🏢 Room: <strong>${active.room}</strong></span>
+        </div>
+        <div class="progress-bar-container" style="background: rgba(0,0,0,0.06); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px;">
+          <div class="progress-bar-fill" style="width: ${progressPct}%; height: 100%; background: var(--color-saffron); border-radius: 4px;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size: 0.7rem; opacity: 0.75; margin-top: 4px;">
+          <span>Start: ${active.start}</span>
+          <span>End: ${active.end} (${progressPct}% elapsed)</span>
+        </div>
+      </div>
+    `;
+  } else {
+    activePeriodHtml = `
+      <div class="active-class-box status-free" style="padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--color-border); text-align: center;">
+        <span class="active-status-tag free" style="background: var(--color-border); color: var(--color-text-muted); font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px;">FREE PERIOD</span>
+        <h4 style="margin: 4px 0; color: var(--color-blue); font-size: 0.95rem;">☕ No Active Class</h4>
+        <p style="margin: 0; font-size: 0.75rem; color: var(--color-text-muted);">Self-study or break is currently in progress.</p>
+      </div>
+    `;
+  }
+  
+  if (periodInfo.nextPeriod && !periodInfo.isWeekend) {
+    const next = periodInfo.nextPeriod;
+    const [nextH, nextM] = next.start.split(":").map(Number);
+    const nextMins = nextH * 60 + nextM;
+    const diff = nextMins - periodInfo.minsOfDay;
+    
+    if (diff > 0) {
+      nextPeriodHtml = `
+        <div class="next-period-box" style="margin-top: 12px; font-size: 0.85rem; padding: 10px 14px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+          <span>Next: <strong>${next.label} (${next.name})</strong></span>
+          <span style="color:var(--color-saffron); font-weight: 700;">Starts in ${diff}m</span>
+        </div>
+      `;
+    }
+  }
+
+  let examHtml = "";
+  const examStartMins = 12 * 60 + 5;
+  const examEndMins = 13 * 60 + 10;
+  
+  if (state.examSubmitted === undefined) state.examSubmitted = false;
+  
+  if (periodInfo.isWeekend) {
+    // No exams
+  } else if (periodInfo.minsOfDay < examStartMins) {
+    const diff = examStartMins - periodInfo.minsOfDay;
+    examHtml = `
+      <div class="exam-widget status-upcoming" style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+        <h4 style="font-size: 0.9rem; color: var(--color-blue); display:flex; align-items:center; gap:6px; margin: 0 0 6px 0;">📝 Term Exam <span class="badge" style="background:var(--color-blue-light); color:var(--color-blue); font-size:0.65rem;">UPCOMING</span></h4>
+        <p style="font-size:0.8rem; margin: 0; color:var(--color-text-muted);">Subject: **Science Paper (Period 5)**. Starts in **${diff} minutes**.</p>
+      </div>
+    `;
+  } else if (periodInfo.minsOfDay >= examStartMins && periodInfo.minsOfDay < examEndMins) {
+    const remaining = examEndMins - periodInfo.minsOfDay;
+    
+    if (state.examSubmitted) {
+      examHtml = `
+        <div class="exam-widget status-submitted" style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+          <h4 style="font-size: 0.9rem; color: var(--color-green); display:flex; align-items:center; gap:6px; margin: 0 0 6px 0;">✅ Exam Paper Submitted <span class="badge" style="background:var(--color-green-light); color:var(--color-green); font-size:0.65rem;">COMPLETED</span></h4>
+          <p style="font-size:0.8rem; margin: 0; color:var(--color-text-muted);">Your responses were saved successfully. Remaining slot time: ${remaining}m.</p>
+          <button class="btn btn-secondary" disabled style="width:100%; padding: 8px; margin-top: 8px; font-weight:600; border-radius:10px;">Submitted Successfully 💾</button>
+        </div>
+      `;
+    } else {
+      examHtml = `
+        <div class="exam-widget status-running" style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+          <h4 style="font-size: 0.9rem; color: var(--color-danger); display:flex; align-items:center; gap:6px; margin: 0 0 6px 0;">🚨 Exam in Progress <span class="badge" style="background:#FFF0F0; color:var(--color-danger); font-size:0.65rem;">LIVE NOW</span></h4>
+          <p style="font-size:0.8rem; margin: 0 0 8px 0; color:var(--color-text-muted);">Subject: **Science (Mid-Term)**. Submission locks in **${remaining} minutes**.</p>
+          <button class="btn btn-saffron" id="btn-submit-exam" style="width:100%; padding: 10px; font-weight:700; border-radius:10px; box-shadow: 0 4px 10px rgba(230,81,0,0.15); border: none; color: white; cursor: pointer;">Submit Exam Paper 📥</button>
+        </div>
+      `;
+    }
+  } else {
+    examHtml = `
+      <div class="exam-widget status-closed" style="margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+        <h4 style="font-size: 0.9rem; color: var(--color-text-muted); display:flex; align-items:center; gap:6px; margin: 0 0 6px 0;">📝 Term Exam <span class="badge" style="background:var(--color-border); color:var(--color-text-muted); font-size:0.65rem;">CLOSED</span></h4>
+        <p style="font-size:0.8rem; margin: 0; color:var(--color-text-muted);">The Science paper has concluded. Submissions are closed and locked.</p>
+        <button class="btn btn-secondary" disabled style="width:100%; padding: 8px; margin-top: 8px; font-weight:600; border-radius:10px; opacity:0.65;">🔒 Submissions Locked (Time Concluded)</button>
+      </div>
+    `;
+  }
+
+  const simulationControlsHtml = `
+    <div class="sim-controls-row" style="margin-top: 16px; border-top: 1px dashed var(--color-border); padding-top: 14px;">
+      <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); display: block; margin-bottom: 8px; text-transform: uppercase;">⏱️ Time Travel Simulator</span>
+      <div style="display: flex; gap: 8px;">
+        <button class="header-btn" id="sim-add-hour" style="flex:1; padding: 6px; font-size:0.75rem; font-weight:600; border-radius:8px; cursor:pointer;">+1 Hour 🕐</button>
+        <button class="header-btn" id="sim-add-day" style="flex:1; padding: 6px; font-size:0.75rem; font-weight:600; border-radius:8px; cursor:pointer;">+1 Day 📅</button>
+        <button class="header-btn" id="sim-reset-clock" style="flex:1; padding: 6px; font-size:0.75rem; font-weight:600; border-radius:8px; border-color:var(--color-saffron); color:var(--color-saffron); cursor:pointer;">Reset 🔄</button>
+      </div>
+    </div>
+  `;
+
+  panel.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+      <div>
+        <h3 style="margin:0; font-size: 1.2rem; color: var(--color-blue);">🕒 Gurukul Clock & Live Scheduler</h3>
+        <span class="panel-subtitle-hi" style="margin-top: 2px;">Central ERP Time Engine</span>
+      </div>
+      <span class="badge" style="background: var(--color-saffron-light); color: var(--color-saffron); font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem;">LIVE</span>
+    </div>
+    
+    <div style="text-align: center; padding: 10px 0 15px 0; border-bottom: 1px solid var(--color-border);">
+      <div class="live-clock-time" style="font-size: 2.2rem; font-weight: 800; color: var(--color-blue); font-family: var(--font-headings); letter-spacing: 1px;">${timeStr}</div>
+      <div class="live-clock-date" style="font-size: 0.85rem; color: var(--color-text-muted); font-weight: 500; margin-top: 4px;">${dateStr}</div>
+    </div>
+    
+    <div style="margin-top: 14px;">
+      ${activePeriodHtml}
+      ${nextPeriodHtml}
+      ${examHtml}
+      ${simulationControlsHtml}
+    </div>
+  `;
+
+  // Bind simulation control events
+  document.getElementById("sim-add-hour")?.addEventListener("click", () => {
+    state.simulationOffset = (state.simulationOffset || 0) + 3600000;
+    const virtualNow = getCurrentVirtualTime();
+    alertToast(`🕐 Fast-forwarded 1 hour. Current virtual time: ${virtualNow.toLocaleTimeString()}`);
+    addActivity(`Simulated Time travel: Fast-forwarded 1 hour.`, "system");
+    triggerClockDependentRedraws();
+  });
+  
+  document.getElementById("sim-add-day")?.addEventListener("click", () => {
+    state.simulationOffset = (state.simulationOffset || 0) + 86400000;
+    const virtualNow = getCurrentVirtualTime();
+    alertToast(`📅 Fast-forwarded 1 day. Current virtual date: ${virtualNow.toLocaleDateString()}`);
+    addActivity(`Simulated Time travel: Fast-forwarded 1 day.`, "system");
+    triggerClockDependentRedraws();
+  });
+  
+  document.getElementById("sim-reset-clock")?.addEventListener("click", () => {
+    state.simulationOffset = 0;
+    state.examSubmitted = false;
+    alertToast(`🔄 Reset clock to system time.`);
+    addActivity(`Simulated Time travel: Reset virtual clock.`, "system");
+    triggerClockDependentRedraws();
+  });
+  
+  document.getElementById("btn-submit-exam")?.addEventListener("click", () => {
+    state.examSubmitted = true;
+    alertToast(`✅ Science Paper submitted successfully!`);
+    addActivity(`Submitted Mid-Term Science Exam paper.`, "system");
+    updateDashboardClockUI(getCurrentVirtualTime());
+  });
+}
+
+function triggerClockDependentRedraws() {
+  const now = getCurrentVirtualTime();
+  updateDashboardClockUI(now);
+  if (state.currentView === "timetable") {
+    updateTimetableStatsAndDraw();
+  }
+  if (state.currentView === "attendance") {
+    drawAttendanceRegister();
+  }
+}
+
+// --- Weather Data Fetching Helper ---
+async function fetchWeatherData(cityKey) {
+  const tempVal = document.getElementById("weather-temp-val");
+  const descVal = document.getElementById("weather-desc-val");
+  const cityVal = document.getElementById("weather-city-val");
+  const humidityVal = document.getElementById("weather-humidity-val");
+  const iconVal = document.getElementById("weather-icon-val");
+
+  if (!tempVal || !descVal || !cityVal || !humidityVal) return;
+
+  // Set loading state
+  tempVal.innerText = "--";
+  descVal.innerText = "Loading weather...";
+  humidityVal.innerText = "--";
+  if (iconVal) iconVal.innerText = "⏳";
+
+  console.log(`[Weather API] Initiating fetch for city key: ${cityKey}`);
+
+  try {
+    const response = await fetch(`/api/weather?city=${encodeURIComponent(cityKey)}`);
+    console.log(`[Weather API] Received status code: ${response.status}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log("[Weather API] Response payload:", data);
+
+    if (data && data.success) {
+      // Prevent undefined/null rendering
+      tempVal.innerText = data.temperature ?? "--";
+      descVal.innerText = data.condition ?? "Unknown";
+      cityVal.innerText = data.location ?? cityKey;
+      humidityVal.innerText = data.humidity ?? "--";
+      if (iconVal) iconVal.innerText = data.icon ?? "☀️";
+    } else {
+      throw new Error("API returned success: false or invalid format");
+    }
+  } catch (error) {
+    console.error("[Weather API] Error fetching weather data:", error);
+    
+    // Set fallback state
+    tempVal.innerText = "--";
+    descVal.innerText = "Weather unavailable";
+    humidityVal.innerText = "--";
+    if (iconVal) iconVal.innerText = "⚠️";
+  }
+}
 
 // --- 1. Dashboard View ---
 function renderDashboardView(parent) {
@@ -889,8 +1273,12 @@ function renderDashboardView(parent) {
     <div class="dashboard-main-row">
       <!-- Left Panel: Calendar Widget, Weather & Activity Feed -->
       <div style="display:flex; flex-direction:column; gap:24px;">
+        <!-- Live Clock & Simulator center -->
+        <div class="panel-card live-clock-card" id="live-clock-panel"></div>
+
         <div class="panel-card">
           <div class="panel-title-row">
+
             <div>
               <h3 class="panel-title">Indian Festival & Academic Calendar</h3>
               <span class="panel-subtitle-hi">Academic Holidays</span>
@@ -904,8 +1292,9 @@ function renderDashboardView(parent) {
         <!-- Weather Campus Monitor -->
         <div class="weather-widget" style="margin-top: 0;">
           <div class="weather-header">
-            <h3>☀️ Campus Weather Monitor</h3>
+            <h3>🌤 Campus Weather Monitor</h3>
             <select id="weather-city-selector" class="weather-city-select">
+              <option value="Mysore" selected>Mysore</option>
               <option value="NewDelhi">New Delhi</option>
               <option value="Mumbai">Mumbai</option>
               <option value="Bengaluru">Bengaluru</option>
@@ -915,14 +1304,14 @@ function renderDashboardView(parent) {
           </div>
           <div class="weather-info">
             <div>
-              <span class="weather-temp" id="weather-temp-val">38°C</span>
-              <div class="weather-desc" id="weather-desc-val">Sunny ☀️</div>
+              <span class="weather-temp" id="weather-temp-val">28°C</span>
+              <div class="weather-desc" id="weather-desc-val">Sunny</div>
             </div>
-            <div style="font-size:3rem">🌤️</div>
+            <div id="weather-icon-val" style="font-size:3rem">☀️</div>
           </div>
           <div class="weather-details">
-            <span>City: <strong id="weather-city-val">New Delhi</strong></span>
-            <span>Humidity: <strong id="weather-humidity-val">45%</strong></span>
+            <span>City: <strong id="weather-city-val">Mysore</strong></span>
+            <span>Humidity: <strong id="weather-humidity-val">55%</strong></span>
             <span>IST Timezone: <strong>24Hr (GMT+5:30)</strong></span>
           </div>
         </div>
@@ -1024,6 +1413,8 @@ function renderDashboardView(parent) {
   renderDashboardActivities();
   drawDashboardCharts();
   animateCounters();
+  updateDashboardClockUI(getCurrentVirtualTime());
+
 
   // Bind quick action click events
   document.getElementById("qa-enroll-student")?.addEventListener("click", () => {
@@ -1045,15 +1436,12 @@ function renderDashboardView(parent) {
   if (weatherSelect) {
     weatherSelect.addEventListener("change", (e) => {
       const cityKey = e.target.value;
-      const details = cityWeather[cityKey];
-      if (details) {
-        document.getElementById("weather-temp-val").innerText = details.temp;
-        document.getElementById("weather-desc-val").innerText = details.condition;
-        document.getElementById("weather-city-val").innerText = details.match;
-        document.getElementById("weather-humidity-val").innerText = details.humidity;
-      }
+      fetchWeatherData(cityKey);
     });
   }
+
+  // Trigger initial weather load for Mysore
+  fetchWeatherData("Mysore");
 }
 
 // --- 2. Students Section View (CRUD) ---
@@ -1510,6 +1898,8 @@ function renderAttendanceView(parent) {
             <div id="attendance-sheet-date" style="font-weight:600">Date: ${state.selectedAttendanceDate}</div>
           </div>
           
+          <div id="attendance-live-time-banner" style="margin-bottom:15px; padding:10px 14px; border-radius:8px; font-size:0.85rem; font-weight:600;"></div>
+          
           <div style="overflow-x: auto;">
             <table class="attendance-table">
               <thead>
@@ -1777,7 +2167,75 @@ function drawAttendanceRegister() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
+  const virtualNow = getCurrentVirtualTime();
+  const periodInfo = getVirtualPeriodDetails(virtualNow);
+
+  function getVirtualDateString(d) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const isToday = (state.selectedAttendanceDate === getVirtualDateString(virtualNow));
+  const banner = document.getElementById("attendance-live-time-banner");
+
+  let isLocked = false;
+  let autoMarkStatus = null;
+  let bannerText = "";
+  let bannerStyle = "";
+
+  if (!isToday) {
+    bannerText = "📅 Viewing historical/future sheet. Standard manual attendance editing enabled.";
+    bannerStyle = "background: rgba(0,0,0,0.04); color: var(--color-text-muted); border: 1px dashed var(--color-border);";
+  } else if (periodInfo.isWeekend) {
+    bannerText = "📅 Campus Closed (Weekend). Attendance registration locked.";
+    bannerStyle = "background: rgba(211, 47, 47, 0.08); color: var(--color-danger); border: 1px solid rgba(211, 47, 47, 0.2);";
+    isLocked = true;
+  } else if (periodInfo.activePeriod) {
+    const active = periodInfo.activePeriod;
+    const [startH, startM] = active.start.split(":").map(Number);
+    const startMins = startH * 60 + startM;
+    const elapsed = periodInfo.minsOfDay - startMins;
+
+    if (elapsed >= 0 && elapsed <= 10) {
+      autoMarkStatus = "P";
+      bannerText = `🕒 Active Period: ${active.label} (${active.name}). Grace Period (0-10m): Auto-marking as Present (P).`;
+      bannerStyle = "background: rgba(19, 136, 8, 0.08); color: var(--color-green); border: 1px solid rgba(19, 136, 8, 0.2);";
+    } else if (elapsed > 10 && elapsed <= 20) {
+      autoMarkStatus = "L";
+      bannerText = `🕒 Active Period: ${active.label} (${active.name}). Grace Period (10-20m): Auto-marking as Late (L).`;
+      bannerStyle = "background: rgba(230, 81, 0, 0.08); color: var(--color-saffron); border: 1px solid rgba(230, 81, 0, 0.2);";
+    } else {
+      isLocked = true;
+      bannerText = `🔒 Attendance Locked. More than 20 minutes have elapsed since ${active.label} started (${elapsed}m elapsed).`;
+      bannerStyle = "background: rgba(211, 47, 47, 0.08); color: var(--color-danger); border: 1px solid rgba(211, 47, 47, 0.2);";
+    }
+  } else {
+    bannerText = "☕ Recess/Break or Free Time. Standard manual attendance editing enabled.";
+    bannerStyle = "background: rgba(0,0,0,0.04); color: var(--color-text-muted); border: 1px dashed var(--color-border);";
+  }
+
+  if (banner) {
+    banner.innerText = bannerText;
+    banner.setAttribute("style", `margin-bottom:15px; padding:10px 14px; border-radius:8px; font-size:0.85rem; font-weight:600; ${bannerStyle}`);
+  }
+
+  const btnUpdate = document.getElementById("btn-update-rollcall");
+  const btnSave = document.getElementById("btn-save-attendance");
+  if (btnUpdate) btnUpdate.disabled = isLocked;
+  if (btnSave) btnSave.disabled = isLocked;
+
   const filtered = getFilteredStudentsForAttendance();
+
+  // Apply auto-marking status to unmarked students
+  if (autoMarkStatus) {
+    filtered.forEach(student => {
+      if (!state.tempAttendance[student.id]) {
+        state.tempAttendance[student.id] = autoMarkStatus;
+      }
+    });
+  }
 
   // Calculate summary counts
   let presentCount = 0;
@@ -1852,6 +2310,8 @@ function drawAttendanceRegister() {
       statusText = "Absent";
     }
 
+    const disabledAttr = isLocked ? "disabled" : "";
+
     tr.innerHTML = `
       <td><code>${student.id}</code></td>
       <td><strong>${student.rollNumber}</strong></td>
@@ -1863,31 +2323,33 @@ function drawAttendanceRegister() {
       </td>
       <td style="text-align:right">
         <div style="display:inline-flex; gap:5px;">
-          <button class="btn btn-green p-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem">Present</button>
-          <button class="btn btn-primary l-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem">Late</button>
-          <button class="btn btn-saffron h-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem">Half-Day</button>
-          <button class="btn btn-secondary a-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem">Absent</button>
+          <button class="btn btn-green p-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem" ${disabledAttr}>Present</button>
+          <button class="btn btn-primary l-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem" ${disabledAttr}>Late</button>
+          <button class="btn btn-saffron h-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem" ${disabledAttr}>Half-Day</button>
+          <button class="btn btn-secondary a-change" data-id="${student.id}" style="padding:4px 8px; font-size:0.75rem" ${disabledAttr}>Absent</button>
         </div>
       </td>
     `;
 
     // Row Event listeners
-    tr.querySelector(".p-change").addEventListener("click", () => {
-      state.tempAttendance[student.id] = "P";
-      drawAttendanceRegister();
-    });
-    tr.querySelector(".l-change").addEventListener("click", () => {
-      state.tempAttendance[student.id] = "L";
-      drawAttendanceRegister();
-    });
-    tr.querySelector(".h-change").addEventListener("click", () => {
-      state.tempAttendance[student.id] = "HD";
-      drawAttendanceRegister();
-    });
-    tr.querySelector(".a-change").addEventListener("click", () => {
-      state.tempAttendance[student.id] = "A";
-      drawAttendanceRegister();
-    });
+    if (!isLocked) {
+      tr.querySelector(".p-change").addEventListener("click", () => {
+        state.tempAttendance[student.id] = "P";
+        drawAttendanceRegister();
+      });
+      tr.querySelector(".l-change").addEventListener("click", () => {
+        state.tempAttendance[student.id] = "L";
+        drawAttendanceRegister();
+      });
+      tr.querySelector(".h-change").addEventListener("click", () => {
+        state.tempAttendance[student.id] = "HD";
+        drawAttendanceRegister();
+      });
+      tr.querySelector(".a-change").addEventListener("click", () => {
+        state.tempAttendance[student.id] = "A";
+        drawAttendanceRegister();
+      });
+    }
 
     tbody.appendChild(tr);
   });
@@ -2682,49 +3144,41 @@ function getSubjectIcon(subjectName) {
 
 // Calculate Highlight periods in real-time or simulated mode
 function getActiveTimetableHighlight() {
-  let dayName = "";
+  const now = getCurrentVirtualTime();
+  const dayIdx = now.getDay(); // 0 is Sunday, 6 is Saturday
+  const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayName = daysMap[dayIdx];
   let currentPeriodId = null;
   let nextPeriodId = null;
 
-  if (state.timetableSimulate) {
-    dayName = "Monday";
-    currentPeriodId = 2; // Period 2
-    nextPeriodId = 3;    // Period 3
-  } else {
-    const now = new Date();
-    const dayIdx = now.getDay(); // 0 is Sunday, 6 is Saturday
-    const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    dayName = daysMap[dayIdx];
+  if (dayIdx >= 1 && dayIdx <= 5) {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const periodsTimes = [
+      { id: 1, start: "08:00", end: "08:40" },
+      { id: 2, start: "08:45", end: "09:40" },
+      { id: 3, start: "09:40", end: "10:35" },
+      { id: "recess", start: "10:35", end: "11:10" },
+      { id: 4, start: "11:10", end: "12:00" },
+      { id: 5, start: "12:05", end: "13:10" },
+      { id: 6, start: "13:10", end: "14:00" }
+    ];
 
-    if (dayIdx >= 1 && dayIdx <= 5) {
-      const mins = now.getHours() * 60 + now.getMinutes();
-      const periodsTimes = [
-        { id: 1, start: "08:00", end: "08:40" },
-        { id: 2, start: "08:45", end: "09:40" },
-        { id: 3, start: "09:40", end: "10:35" },
-        { id: "recess", start: "10:35", end: "11:10" },
-        { id: 4, start: "11:10", end: "12:00" },
-        { id: 5, start: "12:05", end: "13:10" },
-        { id: 6, start: "13:10", end: "14:00" }
-      ];
+    function toMins(str) {
+      const parts = str.split(":");
+      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
 
-      function toMins(str) {
-        const parts = str.split(":");
-        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    for (let i = 0; i < periodsTimes.length; i++) {
+      const p = periodsTimes[i];
+      if (mins >= toMins(p.start) && mins < toMins(p.end)) {
+        currentPeriodId = p.id;
+        nextPeriodId = periodsTimes[i + 1]?.id || null;
+        break;
       }
+    }
 
-      for (let i = 0; i < periodsTimes.length; i++) {
-        const p = periodsTimes[i];
-        if (mins >= toMins(p.start) && mins < toMins(p.end)) {
-          currentPeriodId = p.id;
-          nextPeriodId = periodsTimes[i + 1]?.id || null;
-          break;
-        }
-      }
-
-      if (mins < toMins("08:00")) {
-        nextPeriodId = 1;
-      }
+    if (mins < toMins("08:00")) {
+      nextPeriodId = 1;
     }
   }
   return { dayName, currentPeriodId, nextPeriodId };
@@ -2844,9 +3298,24 @@ function renderTimetableView(parent) {
 
   simulateBtn.addEventListener("click", () => {
     state.timetableSimulate = !state.timetableSimulate;
-    simulateBtn.classList.toggle("active", state.timetableSimulate);
-    alertToast(state.timetableSimulate ? "⚡ Highlights simulated for Monday at 9:00 AM." : "📅 Restored standard clock highlights.");
-    updateTimetableStatsAndDraw();
+    if (state.timetableSimulate) {
+      const now = new Date();
+      const target = new Date(now);
+      const currentDay = now.getDay();
+      const daysDiff = 1 - currentDay;
+      target.setDate(now.getDate() + daysDiff);
+      target.setHours(9, 0, 0, 0);
+      state.simulationOffset = target.getTime() - now.getTime();
+      simulateBtn.classList.add("active");
+      alertToast("⚡ Time travel active: set to Monday 9:00 AM.");
+      addActivity("Simulated timetable slot: set Monday 9:00 AM.", "system");
+    } else {
+      state.simulationOffset = 0;
+      simulateBtn.classList.remove("active");
+      alertToast("📅 Restored standard clock highlights.");
+      addActivity("Restored standard clock highlights.", "system");
+    }
+    triggerClockDependentRedraws();
   });
 
   gridToggle.addEventListener("click", () => {
@@ -4154,17 +4623,28 @@ function animateCounters() {
 function renderTeachersView(parent) {
   const totalTeachers = state.teachers.length;
   const activeTeachers = state.teachers.filter(t => t.status === "Available").length;
-  const subjectsCovered = new Set(state.teachers.map(t => t.subject)).size;
   const assignedClasses = new Set(state.teachers.map(t => t.class)).size;
+
+  // Compute dynamic active lectures based on current day of the week
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const currentDayName = daysOfWeek[new Date().getDay()];
+  const activeDay = (currentDayName === "Saturday" || currentDayName === "Sunday") ? "Monday" : currentDayName;
+  let activeLecturesCount = 0;
+  state.teachers.forEach(t => {
+    if (t.status === "Available" && t.schedule && t.schedule[activeDay]) {
+      const busySlots = t.schedule[activeDay].filter(slot => slot !== "Free").length;
+      activeLecturesCount += busySlots;
+    }
+  });
 
   const headerHtml = `
     <div class="view-header">
       <div class="view-title-area">
-        <span class="view-subtitle-devanagari">Faculty Directory</span>
-        <h2>Teachers Management</h2>
+        <span class="view-subtitle-devanagari">Manage faculty, schedules and assignments</span>
+        <h2>Teacher Management</h2>
       </div>
       <div class="view-actions">
-        <button class="btn btn-saffron" id="add-teacher-trigger">➕ Add New Teacher</button>
+        <button class="btn btn-saffron" id="add-teacher-trigger">➕ Add Teacher</button>
       </div>
     </div>
   `;
@@ -4174,7 +4654,7 @@ function renderTeachersView(parent) {
       <div class="stats-card saffron-border">
         <div class="stats-icon-wrapper">👩‍🏫</div>
         <div class="stats-details">
-          <span class="stats-title">Total Faculty</span>
+          <span class="stats-title">Total Teachers</span>
           <span class="stats-value" id="stats-total-teachers">${totalTeachers} Teachers</span>
           <span class="stats-comparison">✓ Roster active</span>
         </div>
@@ -4183,27 +4663,27 @@ function renderTeachersView(parent) {
       <div class="stats-card green-border">
         <div class="stats-icon-wrapper">✓</div>
         <div class="stats-details">
-          <span class="stats-title">Active / Available</span>
+          <span class="stats-title">Available Today</span>
           <span class="stats-value" id="stats-active-teachers">${activeTeachers} Active</span>
-          <span class="stats-comparison">Available for lectures</span>
+          <span class="stats-comparison">Ready for lectures</span>
         </div>
       </div>
-
+ 
       <div class="stats-card gold-border">
-        <div class="stats-icon-wrapper">📚</div>
+        <div class="stats-icon-wrapper">🏫</div>
         <div class="stats-details">
-          <span class="stats-title">Subjects Covered</span>
-          <span class="stats-value" id="stats-subjects-covered">${subjectsCovered} Subjects</span>
-          <span class="stats-comparison">English, Science, Sanskrit, etc.</span>
+          <span class="stats-title">Classes Assigned</span>
+          <span class="stats-value" id="stats-assigned-classes">${assignedClasses} Classes</span>
+          <span class="stats-comparison">Classes 10, 11, 12</span>
         </div>
       </div>
 
       <div class="stats-card blue-border">
-        <div class="stats-icon-wrapper">🏫</div>
+        <div class="stats-icon-wrapper">⚡</div>
         <div class="stats-details">
-          <span class="stats-title">Assigned Classes</span>
-          <span class="stats-value" id="stats-assigned-classes">${assignedClasses} Classes</span>
-          <span class="stats-comparison">Classes 10, 11, 12</span>
+          <span class="stats-title">Active Lectures</span>
+          <span class="stats-value" id="stats-active-lectures">${activeLecturesCount} Today</span>
+          <span class="stats-comparison">Scheduled slots for ${activeDay}</span>
         </div>
       </div>
     </div>
@@ -4211,6 +4691,16 @@ function renderTeachersView(parent) {
 
   const filtersHtml = `
     <div class="filters-row">
+      <div class="filter-group">
+        <label for="filter-teacher-dept">Department</label>
+        <select id="filter-teacher-dept">
+          <option value="">All Departments</option>
+          <option value="Science & Mathematics">Science & Mathematics</option>
+          <option value="Languages & Literature">Languages & Literature</option>
+          <option value="Humanities & Fine Arts">Humanities & Fine Arts</option>
+        </select>
+      </div>
+
       <div class="filter-group">
         <label for="filter-teacher-subject">Subject</label>
         <select id="filter-teacher-subject">
@@ -4225,28 +4715,17 @@ function renderTeachersView(parent) {
       </div>
 
       <div class="filter-group">
-        <label for="filter-teacher-class">Class</label>
-        <select id="filter-teacher-class">
-          <option value="">All Classes</option>
-          <option value="10">Class 10</option>
-          <option value="11">Class 11</option>
-          <option value="12">Class 12</option>
+        <label for="filter-teacher-status">Status</label>
+        <select id="filter-teacher-status">
+          <option value="">All Statuses</option>
+          <option value="Available">Available</option>
+          <option value="Busy">Busy</option>
         </select>
       </div>
 
-      <div class="filter-group">
-        <label for="filter-teacher-section">Section</label>
-        <select id="filter-teacher-section">
-          <option value="">All Sections</option>
-          <option value="A">Section A</option>
-          <option value="B">Section B</option>
-          <option value="C">Section C</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
+      <div class="filter-group" style="flex-grow: 1; min-width: 200px;">
         <label for="filter-teacher-search">Search Faculty</label>
-        <input type="text" id="filter-teacher-search" placeholder="Search name or ID...">
+        <input type="text" id="filter-teacher-search" placeholder="Search name, ID or subject...">
       </div>
     </div>
 
@@ -4263,9 +4742,9 @@ function renderTeachersView(parent) {
     openTeacherModal();
   });
 
+  document.getElementById("filter-teacher-dept").addEventListener("change", filterTeachers);
   document.getElementById("filter-teacher-subject").addEventListener("change", filterTeachers);
-  document.getElementById("filter-teacher-class").addEventListener("change", filterTeachers);
-  document.getElementById("filter-teacher-section").addEventListener("change", filterTeachers);
+  document.getElementById("filter-teacher-status").addEventListener("change", filterTeachers);
   document.getElementById("filter-teacher-search").addEventListener("input", filterTeachers);
 
   // Initial render
@@ -4277,15 +4756,25 @@ function renderTeachersList() {
   if (!grid) return;
   grid.innerHTML = "";
 
+  const deptFilter = document.getElementById("filter-teacher-dept").value;
   const subjectFilter = document.getElementById("filter-teacher-subject").value;
-  const classFilter = document.getElementById("filter-teacher-class").value;
-  const sectionFilter = document.getElementById("filter-teacher-section").value;
+  const statusFilter = document.getElementById("filter-teacher-status").value;
   const searchFilter = document.getElementById("filter-teacher-search").value.trim().toLowerCase();
 
   const filtered = state.teachers.filter(t => {
+    // Dynamic Department mapping
+    let dept = "General Education";
+    if (t.subject === "Mathematics" || t.subject === "Science") {
+      dept = "Science & Mathematics";
+    } else if (t.subject === "Sanskrit" || t.subject === "English") {
+      dept = "Languages & Literature";
+    } else if (t.subject === "Social Studies" || t.subject === "Arts") {
+      dept = "Humanities & Fine Arts";
+    }
+
+    if (deptFilter && dept !== deptFilter) return false;
     if (subjectFilter && t.subject !== subjectFilter) return false;
-    if (classFilter && t.class !== classFilter) return false;
-    if (sectionFilter && t.section !== sectionFilter) return false;
+    if (statusFilter && t.status !== statusFilter) return false;
     if (searchFilter) {
       const name = `${t.firstName} ${t.lastName}`.toLowerCase();
       const matchName = name.includes(searchFilter);
@@ -4309,44 +4798,44 @@ function renderTeachersList() {
 
   filtered.forEach(t => {
     const card = document.createElement("div");
-    card.className = "student-card teacher-card"; // Reuse layout, style specifically
+    card.className = "student-card teacher-card";
 
     const initials = `${t.firstName[0]}${t.lastName[0]}`;
     const statusClass = t.status === "Available" ? "present" : "absent";
 
     card.innerHTML = `
       <div class="student-card-header">
-        <div class="student-avatar-circle" style="background:var(--color-saffron-light); color:var(--color-saffron); border: 2px solid var(--color-saffron);">${initials}</div>
+        <div class="student-avatar-circle teacher-avatar-circle">${initials}</div>
         <div class="student-header-meta">
-          <span class="student-id-badge" style="font-size: 0.7rem; font-weight: 700; background-color: var(--color-saffron-light); color: var(--color-saffron); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 4px; display: inline-block; border: 1px solid rgba(255, 153, 51, 0.3);">ID: ${t.id}</span>
-          <span class="student-class-badge" style="font-size:0.85rem; font-weight:600; color:var(--color-blue);">${t.subject}</span>
+          <span class="student-id-badge" style="font-size: 0.7rem; font-weight: 700; background-color: var(--color-saffron-light); color: var(--color-saffron); padding: 2px 8px; border-radius: 6px; width: fit-content; margin-bottom: 4px; display: inline-block; border: 1px solid rgba(255, 153, 51, 0.3);">ID: ${t.id}</span>
+          <span class="student-class-badge" style="font-size:0.9rem; font-weight:700; color:var(--color-blue);">${t.subject}</span>
           <span class="student-roll-badge">Class ${t.class} - ${t.section}</span>
         </div>
       </div>
       
-      <div class="student-names-section" style="margin-top: 10px;">
-        <div class="student-name-en" style="font-size: 1.1rem; font-weight: 600;">Dr. ${t.firstName} ${t.lastName}</div>
+      <div class="student-names-section" style="margin-top: 12px;">
+        <div class="student-name-en" style="font-size: 1.15rem; font-weight: 700; color: var(--color-blue);">Dr. ${t.firstName} ${t.lastName}</div>
       </div>
 
-      <div class="student-info-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem;">
+      <div class="student-info-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
         <div class="info-row" style="display: flex; justify-content: space-between;">
-          <span class="info-label" style="color: var(--color-text-muted);">Experience:</span>
-          <span class="info-val" style="font-weight: 500;">${t.experience} Years</span>
+          <span class="info-label" style="color: var(--color-text-muted);">🎓 Experience:</span>
+          <span class="info-val" style="font-weight: 600;">${t.experience} Years</span>
         </div>
         <div class="info-row" style="display: flex; justify-content: space-between;">
-          <span class="info-label" style="color: var(--color-text-muted);">Contact:</span>
-          <span class="info-val" style="font-weight: 500;">+91 ${t.phone}</span>
+          <span class="info-label" style="color: var(--color-text-muted);">📞 Contact:</span>
+          <span class="info-val" style="font-weight: 600;">+91 ${t.phone}</span>
         </div>
         <div class="info-row" style="display: flex; justify-content: space-between; align-items: center;">
-          <span class="info-label" style="color: var(--color-text-muted);">Status:</span>
-          <span class="attendance-status-badge ${statusClass}" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;">${t.status}</span>
+          <span class="info-label" style="color: var(--color-text-muted);">⚡ Status:</span>
+          <span class="attendance-status-badge ${statusClass}" style="font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; font-weight: 700;">${t.status}</span>
         </div>
       </div>
 
-      <div class="student-card-action-buttons" style="margin-top: 20px; display: flex; gap: 8px;">
-        <button class="card-action-btn btn btn-secondary view-profile-btn" style="flex: 1.2; padding: 6px; font-size:0.8rem;" data-id="${t.id}">View Profile</button>
-        <button class="card-action-btn btn btn-primary edit-teacher-btn" style="flex: 0.9; padding: 6px; font-size:0.8rem;" data-id="${t.id}">Edit</button>
-        <button class="delete-icon-btn remove-teacher-btn" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0 5px;" title="Remove Teacher" data-id="${t.id}">🗑️</button>
+      <div class="student-card-actions" style="margin-top: 20px; display: flex; gap: 8px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+        <button class="card-action-btn btn btn-secondary view-profile-btn" style="flex: 1.2; padding: 8px; font-size:0.85rem; font-weight:600; border-radius: 10px;" data-id="${t.id}">View Profile</button>
+        <button class="card-action-btn btn btn-primary edit-teacher-btn" style="flex: 0.9; padding: 8px; font-size:0.85rem; font-weight:600; border-radius: 10px;" data-id="${t.id}">Edit</button>
+        <button class="action-icon-btn delete-btn remove-teacher-btn" style="width: 36px; height: 36px; border-radius: 10px;" title="Remove Teacher" data-id="${t.id}">🗑️</button>
       </div>
     `;
 

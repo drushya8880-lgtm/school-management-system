@@ -745,6 +745,99 @@ def pay_fees():
     except psycopg2.Error as err:
         return jsonify({'message': f'Database error: {err}'}), 500
 
+# 5. Weather API
+@app.route('/api/weather', methods=['GET'])
+def api_weather():
+    import urllib.request
+    import urllib.error
+    city = request.args.get('city', 'Mysore')
+    
+    # Map city keys (both display names and selector values)
+    city_map = {
+        'Mysore': {'lat': 12.2958, 'lon': 76.6394, 'name': 'Mysore', 'temp': '28°C', 'humidity': '55%', 'condition': 'Sunny', 'icon': '☀️'},
+        'NewDelhi': {'lat': 28.6139, 'lon': 77.2090, 'name': 'New Delhi', 'temp': '38°C', 'humidity': '45%', 'condition': 'Sunny', 'icon': '☀️'},
+        'New Delhi': {'lat': 28.6139, 'lon': 77.2090, 'name': 'New Delhi', 'temp': '38°C', 'humidity': '45%', 'condition': 'Sunny', 'icon': '☀️'},
+        'Mumbai': {'lat': 19.0760, 'lon': 72.8777, 'name': 'Mumbai', 'temp': '32°C', 'humidity': '82%', 'condition': 'Humid', 'icon': '⛅'},
+        'Bengaluru': {'lat': 12.9716, 'lon': 77.5946, 'name': 'Bengaluru', 'temp': '26°C', 'humidity': '60%', 'condition': 'Pleasant', 'icon': '🍃'},
+        'Kolkata': {'lat': 22.5726, 'lon': 88.3639, 'name': 'Kolkata', 'temp': '34°C', 'humidity': '78%', 'condition': 'Partly Cloudy', 'icon': '🌥️'},
+        'Chennai': {'lat': 13.0827, 'lon': 80.2707, 'name': 'Chennai', 'temp': '36°C', 'humidity': '72%', 'condition': 'Hot', 'icon': '☀️'}
+    }
+    
+    # Clean the city key
+    matched_key = None
+    for k in city_map:
+        if k.lower() == city.strip().lower():
+            matched_key = k
+            break
+            
+    if not matched_key:
+        matched_key = 'Mysore'
+        
+    info = city_map[matched_key]
+    
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={info['lat']}&longitude={info['lon']}&current=temperature_2m,relative_humidity_2m,weather_code"
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Antigravity Weather Client'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            
+        current = data.get('current', {})
+        temp_val = current.get('temperature_2m')
+        humidity_val = current.get('relative_humidity_2m')
+        code = current.get('weather_code', 0)
+        
+        # Map weather code to condition and icon
+        cond_map = {
+            0: ('Sunny', '☀️'),
+            1: ('Partly Cloudy', '⛅'),
+            2: ('Partly Cloudy', '⛅'),
+            3: ('Cloudy', '☁️'),
+            45: ('Foggy', '🌫️'),
+            48: ('Foggy', '🌫️'),
+            51: ('Drizzle', '🌧️'),
+            53: ('Drizzle', '🌧️'),
+            55: ('Drizzle', '🌧️'),
+            61: ('Rainy', '🌧️'),
+            63: ('Rainy', '🌧️'),
+            65: ('Rainy', '🌧️'),
+            71: ('Snowy', '❄️'),
+            73: ('Snowy', '❄️'),
+            75: ('Snowy', '❄️'),
+            80: ('Showers', '🌧️'),
+            81: ('Showers', '🌧️'),
+            82: ('Showers', '🌧️'),
+            95: ('Thunderstorm', '⛈️'),
+            96: ('Thunderstorm', '⛈️'),
+            99: ('Thunderstorm', '⛈️'),
+        }
+        
+        condition, icon = cond_map.get(code, ('Clear', '☀️'))
+        
+        if temp_val is not None:
+            result = {
+                'success': True,
+                'location': info['name'],
+                'temperature': f"{int(round(temp_val))}°C",
+                'humidity': f"{humidity_val}%" if humidity_val is not None else info['humidity'],
+                'condition': condition,
+                'icon': icon,
+                'source': 'api'
+            }
+            return jsonify(result)
+    except Exception as e:
+        print(f"Weather API request failed, using mock fallback: {e}")
+        
+    return jsonify({
+        'success': True,
+        'location': info['name'],
+        'temperature': info['temp'],
+        'humidity': info['humidity'],
+        'condition': info['condition'],
+        'icon': info['icon'],
+        'source': 'fallback'
+    })
+
 if __name__ == '__main__':
     # Start web app on port 5000
     app.run(host='0.0.0.0', port=5000, debug=True)

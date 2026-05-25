@@ -509,14 +509,29 @@ h1, h2, h3, h4, h5, h6 {
 /* Forms premium styling */
 .form-group input,
 .form-group select,
-.form-group textarea,
-.input-wrapper-login input {
+.form-group textarea {
   background: var(--glass-card-bg) !important;
   border: 1px solid var(--glass-border) !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   color: var(--color-text-main) !important;
   transition: all 0.25s ease;
+}
+
+.input-wrapper-login input {
+  background: var(--glass-card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px !important;
+  padding: 12px 12px 12px 45px !important;
+  color: var(--color-text-main) !important;
+  transition: all 0.25s ease;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover,
+.input-wrapper-login input:hover {
+  border-color: var(--color-saffron) !important;
 }
 
 .form-group input:focus,
@@ -627,4 +642,186 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(249, 115, 22, 0.15) !important;
   color: #f97316 !important;
 }
+
+/* Redesigned Teacher Cards */
+.teacher-card {
+  border-radius: 20px !important;
+  border-bottom: 4px solid var(--color-saffron) !important;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+.teacher-card:hover {
+  transform: translateY(-8px) scale(1.015) !important;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.12) !important;
+  border-color: var(--color-saffron) !important;
+}
+
+.teacher-avatar-circle {
+  width: 55px !important;
+  height: 55px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  font-family: var(--font-headings) !important;
+  background: linear-gradient(135deg, var(--color-saffron-light), #FFE6D5) !important;
+  color: var(--color-saffron) !important;
+  border: 2px solid var(--color-saffron) !important;
+  box-shadow: 0 4px 10px rgba(230, 81, 0, 0.15) !important;
+  flex-shrink: 0 !important;
+}
+
+[data-theme="dark"] .teacher-avatar-circle {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05)) !important;
+  color: var(--color-saffron) !important;
+  border-color: var(--color-saffron) !important;
+}
+
+/* Redesigned Teacher Details Split Modal */
+.teacher-profile-layout {
+  display: grid !important;
+  grid-template-columns: 1fr 1.6fr !important;
+  gap: 28px !important;
+  padding: 15px 0 !important;
+}
+
+.profile-info-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  border-right: 1px solid var(--color-border) !important;
+  padding-right: 28px !important;
+}
+
+@media (max-width: 768px) {
+  .teacher-profile-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  .profile-info-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    padding-right: 0 !important;
+    padding-bottom: 24px !important;
+  }
+}
+
+/* Timetable styling enhancement */
+.schedule-table {
+  border-collapse: collapse !important;
+  background: var(--glass-card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.schedule-table th, .schedule-table td {
+  padding: 12px 10px !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+/* Smooth fade in animation for modal views */
+.modal-content {
+  animation: slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- 5. Global Clock & Live Scheduler Premium UI --- */
+.live-clock-card {
+  background: var(--glass-card-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: var(--border-radius-lg) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.live-clock-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-saffron), var(--color-blue));
+}
+
+.live-clock-time {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  animation: clockPulse 2s infinite ease-in-out;
+}
+
+@keyframes clockPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+}
+
+.active-class-box {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.active-class-box.status-active {
+  border-left: 4px solid var(--color-green) !important;
+}
+
+.active-class-box.status-weekend {
+  border-left: 4px solid var(--color-text-muted) !important;
+}
+
+.active-class-box.status-free {
+  border-left: 4px solid var(--color-saffron) !important;
+}
+
+.exam-widget {
+  transition: all 0.3s ease;
+}
+
+.exam-widget.status-running {
+  background: rgba(220, 38, 38, 0.05) !important;
+  border: 1px solid rgba(220, 38, 38, 0.2) !important;
+  padding: 12px;
+  border-radius: 12px;
+  animation: examPulse 2.5s infinite alternate;
+}
+
+@keyframes examPulse {
+  0% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.1); }
+  100% { box-shadow: 0 0 15px rgba(220, 38, 38, 0.25); }
+}
+
+.sim-controls-row button {
+  background: var(--glass-card-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-main);
+  transition: all 0.25s ease;
+}
+
+.sim-controls-row button:hover {
+  background: var(--color-blue-light);
+  border-color: var(--color-blue);
+  transform: translateY(-1px);
+}
+
+.sim-controls-row button#sim-reset-clock:hover {
+  background: var(--color-saffron-light);
+  border-color: var(--color-saffron);
+  color: var(--color-saffron) !important;
+}
+
+
 
