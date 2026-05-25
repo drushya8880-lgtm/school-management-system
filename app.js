@@ -5006,6 +5006,8 @@ function openTeacherProfile(teacherId) {
 
   activeProfileTeacherId = teacherId;
   modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
 
   const initials = `${t.firstName[0]}${t.lastName[0]}`;
   document.getElementById("tp-avatar").innerText = initials;
@@ -5049,11 +5051,34 @@ function openTeacherProfile(teacherId) {
 }
 
 // Bind profile close actions
+function closeTeacherProfileModal() {
+  const modal = document.getElementById("teacher-profile-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+  document.body.style.overflow = "";
+}
+
 document.getElementById("close-profile-modal")?.addEventListener("click", () => {
-  document.getElementById("teacher-profile-modal")?.classList.add("hidden");
+  closeTeacherProfileModal();
 });
 document.getElementById("close-profile-btn")?.addEventListener("click", () => {
-  document.getElementById("teacher-profile-modal")?.classList.add("hidden");
+  closeTeacherProfileModal();
+});
+
+document.getElementById("teacher-profile-modal")?.addEventListener("click", (e) => {
+  if (e.target === document.getElementById("teacher-profile-modal")) {
+    closeTeacherProfileModal();
+  }
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("teacher-profile-modal");
+    if (modal && !modal.classList.contains("hidden")) {
+      closeTeacherProfileModal();
+    }
+  }
 });
 
 // Bind assign update action

@@ -825,7 +825,6 @@ h1, h2, h3, h4, h5, h6 {
 
 /* --- 6. Redesigned Teacher Profile Detail Modal --- */
 
-/* Blur background wrapper */
 #teacher-profile-modal {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -835,6 +834,11 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center !important;
   transition: opacity 0.3s ease !important;
 }
+
+#teacher-profile-modal.hidden {
+  display: none !important;
+}
+
 
 /* Modal Content Box */
 .teacher-profile-modal-content {
