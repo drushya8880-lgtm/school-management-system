@@ -9,13 +9,21 @@ from psycopg2.extras import RealDictCursor
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Configuration loading
+if os.path.exists(".env"):
+    with open(".env", "r", encoding="utf-8") as f:
+        for line in f:
+            line_str = line.strip()
+            if line_str and not line_str.startswith("#") and "=" in line_str:
+                key, val = line_str.split("=", 1)
+                os.environ[key.strip()] = val.strip()
+
 db_host = os.getenv("DB_HOST")
 db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 
-# If env variables exist → use them. Else → use localhost.
+# If env variables exist → use them. Else → use Render database.
 if db_host or db_user or db_password or db_name or db_port:
     host = db_host if db_host is not None else "localhost"
     user = db_user if db_user is not None else "postgres"
@@ -26,9 +34,9 @@ if db_host or db_user or db_password or db_name or db_port:
     except ValueError:
         port = 5432
 else:
-    host = "localhost"
-    user = "postgres"
-    password = ""
+    host = "dpg-d89aps3bc2fs73f0t3mg-a.oregon-postgres.render.com"
+    user = "admin"
+    password = "OL0HEt0TdYa1puvhwGiYT0Oq67Q8h1LW"
     database = "gurukul_dashboard"
     port = 5432
 
@@ -297,12 +305,12 @@ def setup_database():
             # Seed default payments
             default_history = [
                 {
-                    "invoiceNo": "GKL/2026-27/FT-4912", "studentName": "Ananya Subramanian", "rollNumber": 102,
+                    "invoiceNo": "VDS/2026-27/FT-4912", "studentName": "Ananya Subramanian", "rollNumber": 102,
                     "feeType": "First Term Tuition Fees", "amountPaid": 12450, "paymentDate": "2026-05-10",
                     "txId": "UPI987210293847", "status": "SUCCESSFUL"
                 },
                 {
-                    "invoiceNo": "GKL/2026-27/FT-1283", "studentName": "Ishita Roy Banerjee", "rollNumber": 104,
+                    "invoiceNo": "VDS/2026-27/FT-1283", "studentName": "Ishita Roy Banerjee", "rollNumber": 104,
                     "feeType": "First Term Tuition Fees", "amountPaid": 12450, "paymentDate": "2026-05-12",
                     "txId": "UPI283749201938", "status": "SUCCESSFUL"
                 }
@@ -711,7 +719,7 @@ def pay_fees():
         
         # Insert payment history item
         import random
-        invoice_no = f"GKL/2026-27/FT-{random.randint(1000, 9999)}"
+        invoice_no = f"VDS/2026-27/FT-{random.randint(1000, 9999)}"
         tx_id = f"UPI{random.randint(100000000000, 999999999999)}"
         payment_date = datetime.date.today().strftime("%Y-%m-%d")
         student_name = f"{student['first_name']} {student['last_name']}"
