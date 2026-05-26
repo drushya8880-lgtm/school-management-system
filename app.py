@@ -148,78 +148,78 @@ def setup_database():
         cursor.execute("SELECT COUNT(*) FROM students")
         if cursor.fetchone()[0] == 0:
             # Load initial students
-            initial_students = [
-                {
-                    "id": "stud_1", "rollNumber": 101, "firstName": "Aarav", "middleName": "Kumar", "lastName": "Patel",
-                    "class": "12", "section": "A", "parentName": "Dinesh Patel", "parentPhone": "9876543210",
-                    "address": "Flat 402, Shivshakti Towers, MG Road, Ahmedabad, Gujarat - 380001",
-                    "aadhaar": "1234 5678 9012", "attendancePct": 92, "cgpa": "A1 (9.6)", "pendingFees": 12450,
-                    "grades": {"math": "A1", "science": "A2", "english": "A1", "sst": "B1", "regional": "A1"}
-                },
-                {
-                    "id": "stud_2", "rollNumber": 102, "firstName": "Ananya", "middleName": "", "lastName": "Subramanian",
-                    "class": "12", "section": "B", "parentName": "K. Subramanian", "parentPhone": "9444012345",
-                    "address": "No 18, Temple Car Street, Mylapore, Chennai, Tamil Nadu - 600004",
-                    "aadhaar": "9876 5432 1098", "attendancePct": 88, "cgpa": "A2 (8.8)", "pendingFees": 0,
-                    "grades": {"math": "B1", "science": "A1", "english": "A1", "sst": "A2", "regional": "A2"}
-                },
-                {
-                    "id": "stud_3", "rollNumber": 103, "firstName": "Kabir", "middleName": "Singh", "lastName": "Dhillon",
-                    "class": "11", "section": "A", "parentName": "Harbhajan Singh", "parentPhone": "9812098765",
-                    "address": "House 54, Sector 15-A, Chandigarh, Punjab - 160015",
-                    "aadhaar": "5544 3322 1100", "attendancePct": 74, "cgpa": "B2 (7.2)", "pendingFees": 8200,
-                    "grades": {"math": "C1", "science": "B2", "english": "B1", "sst": "A2", "regional": "B2"}
-                },
-                {
-                    "id": "stud_4", "rollNumber": 104, "firstName": "Ishita", "middleName": "Roy", "lastName": "Banerjee",
-                    "class": "10", "section": "C", "parentName": "Sumit Banerjee", "parentPhone": "9830054321",
-                    "address": "Block G, New Alipore, Kolkata, West Bengal - 700053",
-                    "aadhaar": "8899 0011 2233", "attendancePct": 96, "cgpa": "A1 (9.8)", "pendingFees": 0,
-                    "grades": {"math": "A1", "science": "A1", "english": "A1", "sst": "A1", "regional": "A1"}
-                },
-                {
-                    "id": "stud_5", "rollNumber": 105, "firstName": "Vikram", "middleName": "K.", "lastName": "Venkatesh",
-                    "class": "12", "section": "A", "parentName": "Krishna Venkatesh", "parentPhone": "9845012345",
-                    "address": "Mylapore Car St, Chennai, TN - 600004",
-                    "aadhaar": "1122 3344 5566", "attendancePct": 90, "cgpa": "A2 (9.0)", "pendingFees": 0,
-                    "grades": {"math": "A2", "science": "A1", "english": "A1", "sst": "A2", "regional": "A1"}
-                },
-                {
-                    "id": "stud_6", "rollNumber": 106, "firstName": "Priya", "middleName": "Devi", "lastName": "Sharma",
-                    "class": "10", "section": "A", "parentName": "Ramesh Sharma", "parentPhone": "9829012345",
-                    "address": "B-201, Vaishali Nagar, Jaipur, Rajasthan - 302021",
-                    "aadhaar": "2233 4455 6677", "attendancePct": 85, "cgpa": "A2 (8.6)", "pendingFees": 4500,
-                    "grades": {"math": "B1", "science": "A2", "english": "A1", "sst": "B1", "regional": "A1"}
-                },
-                {
-                    "id": "stud_7", "rollNumber": 107, "firstName": "Arjun", "middleName": "", "lastName": "Nair",
-                    "class": "11", "section": "B", "parentName": "Gopinathan Nair", "parentPhone": "9447012345",
-                    "address": "TC 25/110, Kowdiar, Thiruvananthapuram, Kerala - 695003",
-                    "aadhaar": "3344 5566 7788", "attendancePct": 78, "cgpa": "B1 (8.0)", "pendingFees": 0,
-                    "grades": {"math": "B2", "science": "B1", "english": "A2", "sst": "B1", "regional": "A1"}
-                },
-                {
-                    "id": "stud_8", "rollNumber": 108, "firstName": "Diya", "middleName": "", "lastName": "Iyer",
-                    "class": "12", "section": "C", "parentName": "Subramanian Iyer", "parentPhone": "9884012345",
-                    "address": "Plot 12, Jayanagar, Bengaluru, Karnataka - 560041",
-                    "aadhaar": "4455 6677 8899", "attendancePct": 94, "cgpa": "A1 (9.4)", "pendingFees": 15000,
-                    "grades": {"math": "A1", "science": "A1", "english": "A1", "sst": "A2", "regional": "A2"}
-                },
-                {
-                    "id": "stud_9", "rollNumber": 109, "firstName": "Rohan", "middleName": "Prasad", "lastName": "Verma",
-                    "class": "11", "section": "C", "parentName": "Alok Verma", "parentPhone": "9934012345",
-                    "address": "Patliputra Colony, Patna, Bihar - 800013",
-                    "aadhaar": "5566 7788 9900", "attendancePct": 82, "cgpa": "B1 (8.2)", "pendingFees": 0,
-                    "grades": {"math": "B2", "science": "B2", "english": "A2", "sst": "B1", "regional": "B1"}
-                },
-                {
-                    "id": "stud_10", "rollNumber": 110, "firstName": "Meera", "middleName": "", "lastName": "Deshmukh",
-                    "class": "10", "section": "B", "parentName": "Sanjay Deshmukh", "parentPhone": "9820012345",
-                    "address": "Shivaji Park, Dadar, Mumbai, Maharashtra - 400028",
-                    "aadhaar": "6677 8899 0011", "attendancePct": 89, "cgpa": "A2 (8.9)", "pendingFees": 6200,
-                    "grades": {"math": "B1", "science": "A2", "english": "A1", "sst": "A2", "regional": "A2"}
-                }
+            male_first_names = ["Aarav", "Arjun", "Aditya", "Rohan", "Vikram", "Kabir", "Vihaan", "Ishan", "Reyansh", "Aryan", "Rudra", "Yash", "Atharv", "Vivaan", "Krishna", "Nikhil", "Pranav", "Amit", "Rahul", "Sanjay"]
+            female_first_names = ["Ananya", "Ishita", "Priya", "Diya", "Meera", "Saanvi", "Aaradhya", "Kiara", "Anika", "Riya", "Kavya", "Shreya", "Tanvi", "Pooja", "Neha", "Sneha", "Aditi", "Divya", "Aisha", "Harini"]
+            last_names = ["Patel", "Sharma", "Verma", "Nair", "Iyer", "Deshmukh", "Banerjee", "Dhillon", "Joshi", "Gupta", "Rao", "Reddy", "Sen", "Mishra", "Mehta", "Bhat", "Kulkarni", "Saxena", "Trivedi", "Choudhury"]
+            
+            addresses = [
+                "Flat 402, Shivshakti Towers, MG Road, Ahmedabad, Gujarat - 380001",
+                "No 18, Temple Car Street, Mylapore, Chennai, Tamil Nadu - 600004",
+                "House 54, Sector 15-A, Chandigarh, Punjab - 160015",
+                "Block G, New Alipore, Kolkata, West Bengal - 700053",
+                "Plot 12, Jayanagar, Bengaluru, Karnataka - 560041",
+                "Shivaji Park, Dadar, Mumbai, Maharashtra - 400028",
+                "B-201, Vaishali Nagar, Jaipur, Rajasthan - 302021",
+                "TC 25/110, Kowdiar, Thiruvananthapuram, Kerala - 695003",
+                "Patliputra Colony, Patna, Bihar - 800013"
             ]
+
+            initial_students = []
+            classes = ["10", "11", "12"]
+            sections = ["A", "B", "C"]
+
+            for class_idx, cls in enumerate(classes):
+                for sec_idx, sec in enumerate(sections):
+                    for s_idx in range(10):
+                        roll_number = 101 + class_idx * 30 + sec_idx * 10 + s_idx
+                        student_id = f"stud_{roll_number}"
+                        is_male = (s_idx % 2 == 0)
+
+                        if is_male:
+                            first_name = male_first_names[(class_idx * 10 + sec_idx * 5 + (s_idx // 2)) % len(male_first_names)]
+                        else:
+                            first_name = female_first_names[(class_idx * 10 + sec_idx * 5 + (s_idx // 2)) % len(female_first_names)]
+                        
+                        last_name = last_names[(class_idx * 15 + sec_idx * 7 + s_idx) % len(last_names)]
+                        
+                        if s_idx % 3 == 0:
+                            middle_name = "Kumar" if is_male else ""
+                        elif s_idx % 3 == 1:
+                            middle_name = "Singh" if is_male else "Devi"
+                        else:
+                            middle_name = ""
+
+                        parent_first = male_first_names[(class_idx * 12 + sec_idx * 8 + s_idx * 3) % len(male_first_names)]
+                        parent_name = f"{parent_first} {last_name}"
+                        parent_phone = "9" + str(100000000 + roll_number * 7777)[:9]
+                        aadhaar = f"{1000 + roll_number} {5000 + roll_number * 2} {9000 - roll_number}"
+                        attendance_pct = 70 + ((roll_number * 13) % 29)
+
+                        cgpa_values = ["A1 (9.8)", "A1 (9.6)", "A2 (9.2)", "A2 (8.8)", "B1 (8.4)", "B1 (8.0)", "B2 (7.6)", "B2 (7.2)", "C1 (6.8)", "C1 (6.4)"]
+                        cgpa = cgpa_values[s_idx % len(cgpa_values)]
+                        pending_fees = 12450 if (s_idx % 3 == 0) else (0 if (s_idx % 3 == 1) else 8200)
+
+                        grade_letter = cgpa[:2]
+                        grades = {"math": grade_letter, "science": grade_letter, "english": "A1", "sst": grade_letter, "regional": "A1"}
+                        address = addresses[(class_idx * 4 + sec_idx * 2 + s_idx) % len(addresses)]
+
+                        initial_students.append({
+                            "id": student_id,
+                            "rollNumber": roll_number,
+                            "firstName": first_name,
+                            "middleName": middle_name,
+                            "lastName": last_name,
+                            "class": cls,
+                            "section": sec,
+                            "parentName": parent_name,
+                            "parentPhone": parent_phone,
+                            "address": address,
+                            "aadhaar": aadhaar,
+                            "attendancePct": attendance_pct,
+                            "cgpa": cgpa,
+                            "pendingFees": pending_fees,
+                            "grades": grades
+                        })
 
             for s in initial_students:
                 cursor.execute("""

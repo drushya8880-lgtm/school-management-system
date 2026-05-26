@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Gurukul Digital - Modern Indian Student Management System JS (English-Only)
+   Vidyasetu Digital - Modern Indian Student Management System JS (English-Only)
    ========================================================================== */
 
 // 1. Initial Mock Data Sets (English-Only)
@@ -197,13 +197,118 @@ const cityWeather = {
   Chennai: { temp: "36°C", humidity: "72%", condition: "Hot ☀️", match: "Chennai" }
 };
 
+let stateInitialized = false;
+
+// Timezone and Date Helper Utilities for Asia/Kolkata
+function getKolkataDateParts(date) {
+  if (!date) {
+    if (stateInitialized && typeof state !== 'undefined' && state && state.simulationOffset !== undefined) {
+      date = new Date(Date.now() + state.simulationOffset);
+    } else {
+      date = new Date();
+    }
+  }
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  });
+  const parts = formatter.formatToParts(date);
+  const dateParts = {};
+  parts.forEach(part => {
+    if (part.type !== 'literal') {
+      dateParts[part.type] = parseInt(part.value, 10);
+    }
+  });
+  return dateParts; // { year, month: 1..12, day }
+}
+
+function getKolkataDateString(date) {
+  const parts = getKolkataDateParts(date);
+  return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+}
+
+// Function to generate 90 realistic demo students (10 per section across classes 10-12, sections A-C)
+function getSampleStudents() {
+  const maleFirstNames = ["Aarav", "Arjun", "Aditya", "Rohan", "Vikram", "Kabir", "Vihaan", "Ishan", "Reyansh", "Aryan", "Rudra", "Yash", "Atharv", "Vivaan", "Krishna", "Nikhil", "Pranav", "Amit", "Rahul", "Sanjay"];
+  const femaleFirstNames = ["Ananya", "Ishita", "Priya", "Diya", "Meera", "Saanvi", "Aaradhya", "Kiara", "Anika", "Riya", "Kavya", "Shreya", "Tanvi", "Pooja", "Neha", "Sneha", "Aditi", "Divya", "Aisha", "Harini"];
+  const lastNames = ["Patel", "Sharma", "Verma", "Nair", "Iyer", "Deshmukh", "Banerjee", "Dhillon", "Joshi", "Gupta", "Rao", "Reddy", "Sen", "Mishra", "Mehta", "Bhat", "Kulkarni", "Saxena", "Trivedi", "Choudhury"];
+  
+  const addresses = [
+    "Flat 402, Shivshakti Towers, MG Road, Ahmedabad, Gujarat - 380001",
+    "No 18, Temple Car Street, Mylapore, Chennai, Tamil Nadu - 600004",
+    "House 54, Sector 15-A, Chandigarh, Punjab - 160015",
+    "Block G, New Alipore, Kolkata, West Bengal - 700053",
+    "Plot 12, Jayanagar, Bengaluru, Karnataka - 560041",
+    "Shivaji Park, Dadar, Mumbai, Maharashtra - 400028",
+    "B-201, Vaishali Nagar, Jaipur, Rajasthan - 302021",
+    "TC 25/110, Kowdiar, Thiruvananthapuram, Kerala - 695003",
+    "Patliputra Colony, Patna, Bihar - 800013"
+  ];
+
+  const students = [];
+  const classes = ["10", "11", "12"];
+  const sections = ["A", "B", "C"];
+
+  for (let classIdx = 0; classIdx < classes.length; classIdx++) {
+    for (let secIdx = 0; secIdx < sections.length; secIdx++) {
+      for (let sIdx = 0; sIdx < 10; sIdx++) {
+        const rollNumber = 101 + classIdx * 30 + secIdx * 10 + sIdx;
+        const id = `stud_${rollNumber}`;
+        const isMale = sIdx % 2 === 0;
+
+        const firstName = isMale 
+          ? maleFirstNames[(classIdx * 10 + secIdx * 5 + (sIdx >> 1)) % maleFirstNames.length]
+          : femaleFirstNames[(classIdx * 10 + secIdx * 5 + (sIdx >> 1)) % femaleFirstNames.length];
+        
+        const lastName = lastNames[(classIdx * 15 + secIdx * 7 + sIdx) % lastNames.length];
+        const middleName = (sIdx % 3 === 0) ? (isMale ? "Kumar" : "") : ((sIdx % 3 === 1) ? (isMale ? "Singh" : "Devi") : "");
+
+        const parentFirst = maleFirstNames[(classIdx * 12 + secIdx * 8 + sIdx * 3) % maleFirstNames.length];
+        const parentName = `${parentFirst} ${lastName}`;
+        const parentPhone = "9" + String(100000000 + rollNumber * 7777).substring(0, 9);
+        const aadhaar = `${String(1000 + rollNumber)} ${String(5000 + rollNumber * 2)} ${String(9000 - rollNumber)}`;
+        const attendancePct = 70 + ((rollNumber * 13) % 29);
+
+        const cgpaValues = ["A1 (9.8)", "A1 (9.6)", "A2 (9.2)", "A2 (8.8)", "B1 (8.4)", "B1 (8.0)", "B2 (7.6)", "B2 (7.2)", "C1 (6.8)", "C1 (6.4)"];
+        const cgpa = cgpaValues[sIdx % cgpaValues.length];
+        const pendingFees = (sIdx % 3 === 0) ? 12450 : ((sIdx % 3 === 1) ? 0 : 8200);
+
+        const gradeLetter = cgpa.substring(0, 2);
+        const grades = { math: gradeLetter, science: gradeLetter, english: "A1", sst: gradeLetter, regional: "A1" };
+        const address = addresses[(classIdx * 4 + secIdx * 2 + sIdx) % addresses.length];
+
+        students.push({
+          id,
+          rollNumber,
+          firstName,
+          middleName,
+          lastName,
+          class: classes[classIdx],
+          section: sections[secIdx],
+          parentName,
+          parentPhone,
+          address,
+          aadhaar,
+          attendancePct,
+          cgpa,
+          pendingFees,
+          grades
+        });
+      }
+    }
+  }
+  return students;
+}
+
 // 2. Application State & Store Initialization
 const state = {
   currentView: "dashboard",
   theme: "default", // default | dark | high-contrast
   textSize: "normal", // sm | normal | lg | xl
   networkStatus: "online", // online | offline
-  students: [],
+  students: getSampleStudents(),
   notifications: JSON.parse(localStorage.getItem("gurukul_notifications")) || [
     { id: "n1", title: "Republic Day Parade & Assembly Scheduled", unread: true, time: "10:00 AM" },
     { id: "n2", title: "Diwali Holidays Announcement (School Closed)", unread: true, time: "Yesterday" },
@@ -214,8 +319,8 @@ const state = {
     { id: "act_2", text: "Saved trimester attendance for Class 12-A.", time: "09:30 AM", type: "attendance" },
     { id: "act_3", text: "Fee invoice paid for Aarav Patel.", time: "Yesterday", type: "fees" }
   ],
-  calendarYear: 2026,
-  calendarMonth: 4, // May (0-indexed)
+  calendarYear: getKolkataDateParts().year,
+  calendarMonth: getKolkataDateParts().month - 1, // 0-indexed month
   attendanceSubView: "rollcall",
   pendingSearch: "",
   timetableClass: "12",
@@ -225,6 +330,7 @@ const state = {
   timetableSimulate: false,
   timelineDay: "Monday"
 };
+stateInitialized = true;
 
 // Activity & Notification Helpers
 function addActivity(text, type = "system") {
@@ -258,7 +364,7 @@ function addNotification(title) {
 }
 
 // Initialize empty state structures (will load from Python backend DB)
-state.students = [];
+state.students = getSampleStudents();
 state.attendance = {};
 state.paymentHistory = [];
 
@@ -350,7 +456,21 @@ async function refreshStateData() {
   try {
     const resStudents = await fetch('/api/students');
     if (resStudents.ok) {
-      state.students = await resStudents.json();
+      const dbStudents = await resStudents.json();
+      if (dbStudents && dbStudents.length > 0) {
+        const merged = [...getSampleStudents()];
+        dbStudents.forEach(dbS => {
+          const idx = merged.findIndex(s => s.id === dbS.id || s.rollNumber === dbS.rollNumber);
+          if (idx !== -1) {
+            merged[idx] = dbS;
+          } else {
+            merged.push(dbS);
+          }
+        });
+        state.students = merged;
+      } else {
+        state.students = getSampleStudents();
+      }
     }
 
     const resAttendance = await fetch('/api/attendance');
@@ -1058,7 +1178,7 @@ function updateDashboardClockUI(now) {
   panel.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
       <div>
-        <h3 style="margin:0; font-size: 1.2rem; color: var(--color-blue);">🕒 Gurukul Clock & Live Scheduler</h3>
+        <h3 style="margin:0; font-size: 1.2rem; color: var(--color-blue);">🕒 Vidyasetu Clock & Live Scheduler</h3>
         <span class="panel-subtitle-hi" style="margin-top: 2px;">Central ERP Time Engine</span>
       </div>
       <span class="badge" style="background: var(--color-saffron-light); color: var(--color-saffron); font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem;">LIVE</span>
@@ -1097,6 +1217,9 @@ function updateDashboardClockUI(now) {
   document.getElementById("sim-reset-clock")?.addEventListener("click", () => {
     state.simulationOffset = 0;
     state.examSubmitted = false;
+    const todayParts = getKolkataDateParts();
+    state.calendarYear = todayParts.year;
+    state.calendarMonth = todayParts.month - 1;
     alertToast(`🔄 Reset clock to system time.`);
     addActivity(`Simulated Time travel: Reset virtual clock.`, "system");
     triggerClockDependentRedraws();
@@ -1113,11 +1236,26 @@ function updateDashboardClockUI(now) {
 function triggerClockDependentRedraws() {
   const now = getCurrentVirtualTime();
   updateDashboardClockUI(now);
+  
+  const todayParts = getKolkataDateParts(now);
+  state.calendarYear = todayParts.year;
+  state.calendarMonth = todayParts.month - 1;
+  
   if (state.currentView === "timetable") {
     updateTimetableStatsAndDraw();
   }
   if (state.currentView === "attendance") {
     drawAttendanceRegister();
+    const calendarContainer = document.getElementById("attendance-calendar-container");
+    if (calendarContainer) {
+      drawCalendarWidget(calendarContainer, false);
+    }
+  }
+  if (state.currentView === "dashboard") {
+    const calendarContainer = document.getElementById("dashboard-calendar-container");
+    if (calendarContainer) {
+      drawCalendarWidget(calendarContainer, true);
+    }
   }
 }
 
@@ -1182,7 +1320,7 @@ function renderDashboardView(parent) {
     <div class="view-header">
       <div class="view-title-area">
         <span class="view-subtitle-devanagari">Welcome, DR Adarsh Babu</span>
-        <h2>Dashboard | Gurukul Digital Campus</h2>
+        <h2>Dashboard | Vidyasetu Digital Campus</h2>
       </div>
       <div class="view-actions">
         <span class="badge" style="background-color: var(--color-saffron-light); color: var(--color-saffron); font-weight:700; padding:8px 12px; border-radius:8px;">
@@ -1773,7 +1911,7 @@ function getFilteredStudentsForAttendance() {
 }
 
 function renderAttendanceView(parent) {
-  if (!state.selectedAttendanceDate) state.selectedAttendanceDate = "2026-05-22";
+  if (!state.selectedAttendanceDate) state.selectedAttendanceDate = getKolkataDateString();
   if (!state.selectedAttendanceClass) state.selectedAttendanceClass = "12";
   if (!state.selectedAttendanceSection) state.selectedAttendanceSection = "A";
   if (!state.selectedAttendanceSearch) state.selectedAttendanceSearch = "";
@@ -2484,7 +2622,7 @@ function renderGradesView(parent) {
             </div>
             <div class="form-group">
               <label for="ptm-date">Proposed Date</label>
-              <input type="date" id="ptm-date" min="2026-05-22" required style="width:100%; padding: 8px; border: 1px solid var(--color-border); border-radius:6px;">
+              <input type="date" id="ptm-date" min="${getKolkataDateString()}" required style="width:100%; padding: 8px; border: 1px solid var(--color-border); border-radius:6px;">
             </div>
           </div>
           <button type="submit" class="btn btn-saffron" style="align-self:flex-end">Schedule Meeting</button>
@@ -2815,7 +2953,7 @@ function openReportCard(studentId) {
       <div id="tab-academic" class="profile-tab-content hidden">
         <div class="report-card-view">
           <div class="report-card-header" style="text-align:center; border-bottom: 2px solid var(--color-blue); padding-bottom:10px; margin-bottom:15px;">
-            <h3 class="report-card-title-en" style="margin: 0; color: var(--color-blue);">GURUKUL ACADEMIC HIGH SCHOOL</h3>
+            <h3 class="report-card-title-en" style="margin: 0; color: var(--color-blue);">VIDYASETU ACADEMIC HIGH SCHOOL</h3>
             <p style="font-size:0.7rem; letter-spacing:1px; margin-top:4px;">AFFILIATED TO CBSE BOARD NEW DELHI | ESTD 2005</p>
           </div>
 
@@ -4060,7 +4198,7 @@ function openInvoiceReceipt(historyItem) {
   receiptPrintArea.innerHTML = `
     <div style="font-family:monospace; line-height:1.4; border:1px solid #000; padding:20px;">
       <div style="text-align:center; font-weight:bold; font-size:1.1rem; border-bottom:1px dashed #000; padding-bottom:10px; margin-bottom:10px;">
-        GURUKUL ACADEMIC HIGH SCHOOL
+        VIDYASETU ACADEMIC HIGH SCHOOL
         <div style="font-size:0.75rem; font-weight:normal;">Sector 5, Salt Lake City, Kolkata - 700091</div>
         <div style="font-size:0.75rem; font-weight:normal;">GSTIN: 19AAATG2026F1Z8 | SAC: 999299</div>
       </div>
@@ -4158,8 +4296,9 @@ function drawCalendarWidget(container, isDashboard) {
     // Check if holiday
     const holidayMatch = holidays.find(h => h.date === dateString);
 
-    // Check if today (May 22, 2026)
-    const isToday = (year === 2026 && month === 4 && day === 22);
+    // Check if today (actual/simulated local date in Asia/Kolkata timezone)
+    const todayParts = getKolkataDateParts();
+    const isToday = (year === todayParts.year && month === (todayParts.month - 1) && day === todayParts.day);
 
     // Check if exam day (May 28-29, 2026)
     const isExamDay = (year === 2026 && month === 4 && (day === 28 || day === 29));

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Gurukul Digital - Modern Indian Student Management System CSS
+   Vidyasetu Digital - Modern Indian Student Management System CSS
    ========================================================================== */
 
 /* 1. Global Custom Properties & Color Systems */
@@ -3019,7 +3019,8 @@ input:checked+.slider:before {
 
 .grades-filters-sticky {
   position: sticky;
-  top: 70px; /* Aligns right below .app-header sticky top */
+  top: 70px;
+  /* Aligns right below .app-header sticky top */
   z-index: 95;
   background-color: var(--color-bg-card) !important;
   box-shadow: var(--shadow-sm);
@@ -3054,8 +3055,13 @@ input:checked+.slider:before {
 }
 
 @keyframes badge-float {
-  0% { transform: translateY(0px) scale(1); }
-  100% { transform: translateY(-3px) scale(1.1); }
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+
+  100% {
+    transform: translateY(-3px) scale(1.1);
+  }
 }
 
 /* Compact layout style changes for Grades view */
@@ -3114,6 +3120,7 @@ input:checked+.slider:before {
     opacity: 0;
     transform: translateY(15px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -3258,7 +3265,7 @@ body.sidebar-collapsed .shloka-card {
     box-shadow: var(--shadow-md);
     text-transform: capitalize;
   }
-  
+
   body.sidebar-collapsed .nav-item:hover::after {
     opacity: 1;
   }
@@ -3404,9 +3411,20 @@ body.sidebar-collapsed .shloka-card {
 }
 
 @keyframes pulse-dot-indicator {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.6); }
-  70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(230, 81, 0, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(230, 81, 0, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.6);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(230, 81, 0, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(230, 81, 0, 0);
+  }
 }
 
 /* Premium Subject Glass Card Design */
@@ -3542,9 +3560,17 @@ body.sidebar-collapsed .shloka-card {
 }
 
 @keyframes pulse-badge-glow {
-  0% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.6); }
-  70% { box-shadow: 0 0 0 4px rgba(230, 81, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 4px rgba(230, 81, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 81, 0, 0);
+  }
 }
 
 /* Subject Themes Settings */
@@ -3554,36 +3580,42 @@ body.sidebar-collapsed .shloka-card {
   --subj-bg: rgba(37, 99, 235, 0.05);
   --subj-border: rgba(37, 99, 235, 0.15);
 }
+
 .subject-science {
   --subj-glow-rgb: 22, 163, 74;
   --subj-color: #16a34a;
   --subj-bg: rgba(22, 163, 74, 0.05);
   --subj-border: rgba(22, 163, 74, 0.15);
 }
+
 .subject-english {
   --subj-glow-rgb: 234, 88, 12;
   --subj-color: #ea580c;
   --subj-bg: rgba(234, 88, 12, 0.05);
   --subj-border: rgba(234, 88, 12, 0.15);
 }
+
 .subject-lab {
   --subj-glow-rgb: 147, 51, 234;
   --subj-color: #9333ea;
   --subj-bg: rgba(147, 51, 234, 0.05);
   --subj-border: rgba(147, 51, 234, 0.15);
 }
+
 .subject-cocurricular {
   --subj-glow-rgb: 13, 148, 136;
   --subj-color: #0d9488;
   --subj-bg: rgba(13, 148, 136, 0.05);
   --subj-border: rgba(13, 148, 136, 0.15);
 }
+
 .subject-social-studies {
   --subj-glow-rgb: 6, 182, 212;
   --subj-color: #06b6d4;
   --subj-bg: rgba(6, 182, 212, 0.05);
   --subj-border: rgba(6, 182, 212, 0.15);
 }
+
 .subject-other {
   --subj-glow-rgb: 79, 70, 229;
   --subj-color: #4f46e5;
@@ -3595,26 +3627,32 @@ body.sidebar-collapsed .shloka-card {
   --subj-bg: rgba(37, 99, 235, 0.12);
   --subj-border: rgba(37, 99, 235, 0.25);
 }
+
 [data-theme="dark"] .subject-science {
   --subj-bg: rgba(22, 163, 74, 0.12);
   --subj-border: rgba(22, 163, 74, 0.25);
 }
+
 [data-theme="dark"] .subject-english {
   --subj-bg: rgba(234, 88, 12, 0.12);
   --subj-border: rgba(234, 88, 12, 0.25);
 }
+
 [data-theme="dark"] .subject-lab {
   --subj-bg: rgba(147, 51, 234, 0.12);
   --subj-border: rgba(147, 51, 234, 0.25);
 }
+
 [data-theme="dark"] .subject-cocurricular {
   --subj-bg: rgba(13, 148, 136, 0.12);
   --subj-border: rgba(13, 148, 136, 0.25);
 }
+
 [data-theme="dark"] .subject-social-studies {
   --subj-bg: rgba(6, 182, 212, 0.12);
   --subj-border: rgba(6, 182, 212, 0.25);
 }
+
 [data-theme="dark"] .subject-other {
   --subj-bg: rgba(79, 70, 229, 0.12);
   --subj-border: rgba(79, 70, 229, 0.25);
@@ -3656,10 +3694,12 @@ body.sidebar-collapsed .shloka-card {
   0% {
     box-shadow: 0 0 15px 3px rgba(var(--subj-glow-rgb), 0.22), var(--shadow-sm);
   }
+
   50% {
     box-shadow: 0 0 28px 8px rgba(var(--subj-glow-rgb), 0.45), var(--shadow-lg);
     transform: translateY(-4px) scale(1.02);
   }
+
   100% {
     box-shadow: 0 0 15px 3px rgba(var(--subj-glow-rgb), 0.22), var(--shadow-sm);
   }
@@ -3917,8 +3957,13 @@ body.sidebar-collapsed .shloka-card {
 }
 
 @keyframes float-empty-icon {
-  0% { transform: translateY(0px) rotate(0deg); }
-  100% { transform: translateY(-8px) rotate(5deg); }
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(-8px) rotate(5deg);
+  }
 }
 
 .empty-state-title {
@@ -3948,8 +3993,13 @@ body.sidebar-collapsed .shloka-card {
 }
 
 @keyframes loading-pulse-glow {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .skeleton-timetable-grid {
