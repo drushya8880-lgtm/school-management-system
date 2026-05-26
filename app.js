@@ -457,20 +457,7 @@ async function refreshStateData() {
     const resStudents = await fetch('/api/students');
     if (resStudents.ok) {
       const dbStudents = await resStudents.json();
-      if (dbStudents && dbStudents.length > 0) {
-        const merged = [...getSampleStudents()];
-        dbStudents.forEach(dbS => {
-          const idx = merged.findIndex(s => s.id === dbS.id || s.rollNumber === dbS.rollNumber);
-          if (idx !== -1) {
-            merged[idx] = dbS;
-          } else {
-            merged.push(dbS);
-          }
-        });
-        state.students = merged;
-      } else {
-        state.students = getSampleStudents();
-      }
+      state.students = dbStudents || [];
     }
 
     const resAttendance = await fetch('/api/attendance');
